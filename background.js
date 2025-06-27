@@ -82,9 +82,8 @@ const FUNCTIONS = new Map([
 
         const user = await getUser()
         console.warn('xxx HERE', JSON.stringify(user))
-        const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager?userPrivateKey=${user.user.privateKey}&userPublicKey=${user.user.publicKey}&federatedUserPrivateKey=${user.federatedUser.privateKey}&newPayment=${encodeURIComponent(JSON.stringify(data))}`
+        const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager-2?userPrivateKey=${user.user.privateKey}&userPublicKey=${user.user.publicKey}&federatedUserPrivateKey=${user.federatedUser.privateKey}&setPaymentTotal=${data.newPayment.total}&setPaymentUserPaymentId=${data.newPayment.userPaymentId}`
         sendReponseToPage({ action: 'popUpIframe', url: url })
-
       } catch ({ message }) {
         sendReponseToPage({ action: 'alert', message })
       }
