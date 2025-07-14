@@ -211,7 +211,7 @@ const DOMAINS = new Map([
             domain: 'go.xero.com',
             newPayment: {
               total,
-              userPaymentId: 'INV-XYZ'
+              userPaymentId
             }
           })
         } catch ({ message }) {
