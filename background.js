@@ -1,10 +1,10 @@
-chrome.runtime.onConnect.addListener(() => {
-  console.warn('Keep-alive connection started');
-})
+// chrome.runtime.onConnect.addListener(() => {
+//   console.warn('Keep-alive connection started');
+// })
 
 // REMOVE ABOVE WHEN GOING TO PROD
 
-console.warn('xxx1 BACKGROUND RUNNING!')
+console.warn('[StickyConnectionsExtension] 1 BACKGROUND RUNNING!')
 
 const BASE_DOMAIN_API = 'https://sticky.to'
 const BASE_DOMAIN_DASHBOARD = 'https://dashboard.sticky.to'
@@ -51,10 +51,10 @@ const FUNCTIONS = new Map([
     'test-connection',
     async (data, sender, sendResponse) => {
       try {
-        console.warn('xxx3 TEST CONN', data)
+        console.warn('[StickyConnectionsExtension] 3 TEST CONN', data)
 
         const { cPrivateKey, cFederatedUserPrivateKey } = data
-        console.warn('xxx4')
+        console.warn('[StickyConnectionsExtension] 4')
         const res = await fetch(
           `${BASE_DOMAIN_API}/v2/users/me`,
           {
@@ -64,10 +64,10 @@ const FUNCTIONS = new Map([
             }
           }
         )
-        console.warn('xxx5 res', res)
+        console.warn('[StickyConnectionsExtension] 5 res', res)
         assert(res.ok, 'Sorry, those keys are not right.')
         const resData = await res.json()
-        console.warn('xxx resData', JSON.stringify(resData))
+        console.warn('[StickyConnectionsExtension] 6 resData', JSON.stringify(resData))
         sendResponse({ ok: true, message: `Connection to ${resData.user.name} successful!` })
       } catch ({ message }) {
         sendResponse({ ok: false, message })
@@ -78,10 +78,10 @@ const FUNCTIONS = new Map([
     'pay',
     async (data, sender, sendResponse) => {
       try {
-        console.warn('xxx3 PAY', JSON.stringify(data))
+        console.warn('[StickyConnectionsExtension] 7 PAY', JSON.stringify(data))
 
         const user = await getUser()
-        console.warn('xxx HERE', JSON.stringify(user))
+        console.warn('[StickyConnectionsExtension] 8', JSON.stringify(user))
         const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager-2?userPrivateKey=${user.user.privateKey}&userPublicKey=${user.user.publicKey}&federatedUserPrivateKey=${user.federatedUser.privateKey}&setPaymentTotal=${data.newPayment.total}&setPaymentUserPaymentId=${data.newPayment.userPaymentId}`
         sendReponseToPage({ action: 'popUpIframe', url: url })
       } catch ({ message }) {
@@ -93,11 +93,11 @@ const FUNCTIONS = new Map([
 
 chrome.runtime.onMessage.addListener(
   (data, sender, sendResponse) => {
-    console.warn('xxx2 ON MSG!', JSON.stringify(data), data.type, data.type === 'test-connection')
+    console.warn('[StickyConnectionsExtension] 9 ON MSG!', JSON.stringify(data), data.type, data.type === 'test-connection')
 
     const foundFunction = FUNCTIONS.get(data.type)
 
-    console.warn('xxx foundFunction', foundFunction)
+    console.warn('[StickyConnectionsExtension] 10 foundFunction', foundFunction)
 
     if (foundFunction) {
       foundFunction(data, sender, sendResponse)

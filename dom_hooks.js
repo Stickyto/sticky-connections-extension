@@ -36,6 +36,11 @@ function uuid (useUnderscores = false) {
 function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, maxWidth, maxHeight, borderRadius, onClose, insideElementName = 'iframe', showBlocker = true }) {
   document.body.style.overflow = 'hidden'
 
+  const foundIframe = document.querySelector('iframe.pop-up-frame--inside')
+  if (foundIframe) {
+    foundIframe.src = src
+    return
+  }
   addStyle(
     'pop-up-something',
     `
@@ -47,13 +52,13 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
         left: 0;
         bottom: 0;
         right: 0;
-        z-index: 3;
+        z-index: 99;
       }
       .pop-up-frame--inside {
         display: block;
         width: ${typeof width === 'string' ? width : 'calc(100% - 32px)'};
         height: ${typeof height === 'string' ? height : 'calc(100% - 32px)'};
-        max-width: ${typeof maxWidth === 'string' ? maxWidth : 'calc(100% - 32px)'};
+        max-width: ${typeof maxWidth === 'string' ? maxWidth : '1024px'};
         max-height: ${typeof maxHeight === 'string' ? maxHeight : '640px'};
         border-radius: ${typeof borderRadius === 'string' ? borderRadius : '6px'};
         background-color: white;
@@ -61,7 +66,7 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        z-index: 8;
+        z-index: 100;
         box-shadow: rgba(60, 68, 86, 0.2) 0px 3px 6px 0px, rgba(0, 0, 0, 0.2) 0px 1px 2px 0px;
         border: 0;
       }
@@ -76,7 +81,7 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
         position: absolute;
         top: 20px;
         right: 20px;
-        z-index: 9;
+        z-index: 101;
         box-shadow: 0 2px 4px 0 rgb(60 66 87 / 40%), 0 2px 4px 0 rgb(0 0 0 / 40%);
       }
       .pop-up-frame--button svg {
@@ -169,14 +174,49 @@ const DOMAINS = new Map([
         return (isOnNewInvoice() || isOnEditInvoice()) || isOnViewInvoice()
       },
       pay: () => {
-        chrome.runtime.sendMessage({
-          type: 'pay',
-          domain: 'go.xero.com',
-          newPayment: {
-            total: 100,
-            userPaymentId: 'INV-XYZ'
+        function getTotal() {
+          const container = document.querySelector('[data-automationid="as-total--as-readonly-row"]')
+          if (!container) throw new Error('Xero->pay: Total row not found')
+
+          const valueEl = container.querySelector('[data-automationid="as-readonly-row-field"] div.xui-textcolor-standard')
+          if (!valueEl) throw new Error('Xero->pay: Total value not found')
+
+          const raw = valueEl.textContent.trim()
+          const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
+          if (isNaN(parsed)) throw new Error(`Xero->pay: Invalid number: "${raw}"`)
+
+          return Math.round(parsed * 100)
+        }
+
+        function getUserPaymentId() {
+          const container = document.querySelector('.ReadOnlyInvoice-invoiceNumber')
+          if (!container) throw new Error('Xero->pay: Invoice number container not found')
+
+          for (const node of container.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+              return node.textContent.trim()
+            }
           }
-        })
+
+          throw new Error('Xero->pay: Invoice number text node not found')
+        }
+
+        try {
+          const total = getTotal()
+          const userPaymentId = getUserPaymentId()
+          console.log('[StickyConnectionsExtension] total', total)
+          console.log('[StickyConnectionsExtension] userPaymentId', userPaymentId)
+          chrome.runtime.sendMessage({
+            type: 'pay',
+            domain: 'go.xero.com',
+            newPayment: {
+              total,
+              userPaymentId: 'INV-XYZ'
+            }
+          })
+        } catch ({ message }) {
+          alert(message)
+        }
       }
     }
   ],
@@ -203,17 +243,17 @@ const ACTIONS = new Map([
     'popUpIframe',
     ({ url }) => {
       popUpIframe({ src: url })
-      console.warn('xxx GO TO', url)
+      console.warn('[StickyConnectionsExtension] popUpIframe url', url)
     }
   ]
 ])
 
 window.addEventListener('message', (event) => {
-  console.warn('xxx XYZ 1', event)
+  console.warn('[StickyConnectionsExtension] XYZ 1', event)
   if (event.origin !== window.origin && event.origin !== location.origin) return
   if (event.data?.source !== 'sticky-connections') return
 
-  console.warn('xxx XYZ 2')
+  console.warn('[StickyConnectionsExtension] XYZ 2')
 
   // Forward to background
   chrome.runtime.sendMessage(
@@ -234,27 +274,29 @@ window.addEventListener('message', (event) => {
 
 ;(async function () {
   chrome.runtime.onMessage.addListener(data => {
-    console.warn('xxx FROM SOMEWHERE data', data)
+    console.warn('[StickyConnectionsExtension] FROM S data', data)
     const whichAction = ACTIONS.get(data.action)
     whichAction && whichAction(data)
   });
 
-  console.warn('xxx extension booted')
+  console.warn('[StickyConnectionsExtension] extension booted')
   const whichDomain = DOMAINS.get(window.location.host)
-  console.warn('xxx whichDomain', whichDomain)
+  console.warn('[StickyConnectionsExtension] whichDomain', whichDomain)
   if (!whichDomain) {
     return
   }
   await whichDomain.boot()
   const canPay = whichDomain.canPay()
 
-  if (canPay) {
-    const payButton = document.createElement('button')
-    payButton.innerHTML = '<strong style="vertical-align:2px;">Take payment</strong>'
-    payButton.style = 'display:block;position:fixed;bottom:12px;right:8px;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#1A1F35;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("https://cdn.sticky.to/symbol-deploy-white.svg"),url("https://cdn.sticky.to/symbol-deploy-background.jpg");background-position:16px 8px,center;background-repeat:no-repeat,no-repeat;background-size:29px 40px,cover;'
-
-    payButton.addEventListener('click', whichDomain.pay)
-
-    document.body.appendChild(payButton)
+  let payButtonNow = document.querySelector('.sticky-pay-button')
+  if (payButtonNow) {
+    payButtonNow.style.display = canPay ? 'block' : 'none'
+  } else {
+    payButtonNow = document.createElement('button')
+    payButtonNow.classList.add('sticky-pay-button')
+    payButtonNow.innerHTML = '<strong style="vertical-align:2px;">Take payment</strong>'
+    payButtonNow.style = `display:${canPay ? 'block' : 'none'};position:fixed;bottom:12px;right:8px;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#1A1F35;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("https://cdn.sticky.to/symbol-deploy-white.svg"),url("https://cdn.sticky.to/symbol-deploy-background.jpg");background-position:16px 8px,center;background-repeat:no-repeat,no-repeat;background-size:29px 40px,cover;`
+    payButtonNow.addEventListener('click', whichDomain.pay)
+    document.body.appendChild(payButtonNow)
   }
 })()
