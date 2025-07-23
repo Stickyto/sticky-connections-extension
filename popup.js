@@ -17,7 +17,6 @@ window.addEventListener(
     }
 
     const testConnectionButton = document.querySelector('button')
-    console.warn('XXX BUTTON IS', testConnectionButton)
     testConnectionButton.addEventListener(
       'click',
       () => {
