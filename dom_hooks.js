@@ -85,7 +85,7 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
         box-shadow: 0 2px 4px 0 rgb(60 66 87 / 40%), 0 2px 4px 0 rgb(0 0 0 / 40%);
       }
       .pop-up-frame--button svg {
-        color: #1A1F35;
+        color: #202058;
         display: block;
         width: 20px;
         margin: 0 auto 0 auto;
@@ -295,7 +295,7 @@ window.addEventListener('message', (event) => {
     payButtonNow = document.createElement('button')
     payButtonNow.classList.add('sticky-pay-button')
     payButtonNow.innerHTML = '<strong style="vertical-align:2px;">Take payment</strong>'
-    payButtonNow.style = `display:${canPay ? 'block' : 'none'};position:fixed;bottom:12px;right:8px;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#1A1F35;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("https://cdn.sticky.to/symbol-deploy-white.svg"),url("https://cdn.sticky.to/symbol-deploy-background.jpg");background-position:16px 8px,center;background-repeat:no-repeat,no-repeat;background-size:29px 40px,cover;`
+    payButtonNow.style = `display:${canPay ? 'block' : 'none'};position:fixed;bottom:12px;right:8px;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#202058;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("https://cdn.sticky.to/symbol-deploy-white.svg"),url("https://cdn.sticky.to/symbol-deploy-background.jpg");background-position:16px 8px,center;background-repeat:no-repeat,no-repeat;background-size:29px 40px,cover;`
     payButtonNow.addEventListener('click', whichDomain.pay)
     document.body.appendChild(payButtonNow)
   }
