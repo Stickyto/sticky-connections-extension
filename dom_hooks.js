@@ -192,24 +192,24 @@ const DOMAINS = new Map([
         }
         return isOnNewInvoice() || isOnEditInvoice() || isOnViewInvoice()
       },
-      pay: () => {
+      onAction: () => {
         function getTotal() {
           const container = document.querySelector('[data-automationid="as-total--as-readonly-row"]')
-          if (!container) throw new Error('Xero->pay: Total row not found')
+          if (!container) throw new Error('Xero->onAction: Total row not found')
 
           const valueEl = container.querySelector('[data-automationid="as-readonly-row-field"] div.xui-textcolor-standard')
-          if (!valueEl) throw new Error('Xero->pay: Total value not found')
+          if (!valueEl) throw new Error('Xero->onAction: Total value not found')
 
           const raw = valueEl.textContent.trim()
           const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
-          if (isNaN(parsed)) throw new Error(`Xero->pay: Invalid number: "${raw}"`)
+          if (isNaN(parsed)) throw new Error(`Xero->onAction: Invalid number: "${raw}"`)
 
           return Math.round(parsed * 100)
         }
 
         function getUserPaymentId() {
           const container = document.querySelector('.ReadOnlyInvoice-invoiceNumber')
-          if (!container) throw new Error('Xero->pay: Invoice number container not found')
+          if (!container) throw new Error('Xero->onAction: Invoice number container not found')
 
           for (const node of container.childNodes) {
             if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
@@ -217,7 +217,7 @@ const DOMAINS = new Map([
             }
           }
 
-          throw new Error('Xero->pay: Invoice number text node not found')
+          throw new Error('Xero->onAction: Invoice number text node not found')
         }
 
         try {
@@ -253,21 +253,21 @@ const DOMAINS = new Map([
         }
         return isOnNewInvoice() || isOnEditInvoice()
       },
-      pay: () => {
+      onAction: () => {
         function getTotal() {
           const valueEl = document.querySelector('div.amount[data-qbo-bind^="textAmount: balanceDueValueText"]')
-          if (!valueEl) throw new Error('QuickBooks: pay: Total value not found')
+          if (!valueEl) throw new Error('QuickBooks->onAction: Total value not found')
 
           const raw = valueEl.textContent.trim()
           const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
-          if (isNaN(parsed)) throw new Error(`QuickBooks: pay: Invalid number: "${raw}"`)
+          if (isNaN(parsed)) throw new Error(`QuickBooks->onAction: Invalid number: "${raw}"`)
 
           return Math.round(parsed * 100)
         }
 
         function getUserPaymentId() {
           const valueEl = document.querySelector('[data-automation-id="input-ref-number-sales"]')
-          if (!valueEl) throw new Error('QuickBooks: pay: Invoice number not found')
+          if (!valueEl) throw new Error('QuickBooks->onAction: Invoice number not found')
           return valueEl.value
         }
 
@@ -298,7 +298,7 @@ const DOMAINS = new Map([
       canAction: () => {
         return false
       },
-      pay: () => {}
+      onAction: () => {}
     }
   ]
 ])
@@ -362,17 +362,17 @@ window.addEventListener('message', (event) => {
 
     const logoSvg = '<svg height="74" viewBox="0 0 50 74" width="50" xmlns="http://www.w3.org/2000/svg"><path d="m42.280552 34.3888116c6.3631722 6.3631723 6.3631722 16.6799129 0 23.0430852l-7.1418065 7.1418065c-7.2964367 7.2964367-19.1262981 7.2964367-26.42273481 0l-4.50043019-4.5004302c-4.9170418-4.9170418-5.52395306-12.6622709-1.47732324-18.2780523l.19309544-.2616611 6.00516699 6.005167c-.73677768 2.51395-.04291801 5.2295914 1.80948401 7.0819934l4.0815984 4.0815985c3.9135433 3.9135433 10.2586508 3.9135433 14.1721941 0l8.0050005-8.0050006c2.6513218-2.6513218 2.6513218-6.9499637 0-9.6012855l-7.4469315-7.4469315c-1.5739329-1.5739329-3.9877816-1.9431152-5.9602046-.9115741l-1.720621.8998532-5.5247537-5.5247537.224755-.2247549c5.3026435-5.3026436 13.8999274-5.3026436 19.202571 0zm3.5038675-20.4620847c4.9170418 4.9170418 5.5239531 12.6622709 1.4773232 18.2780523l-.1930954.2616611-6.005167-6.005167c.7367777-2.51395.042918-5.2295914-1.809484-7.0819934l-4.0815984-4.0815985c-3.9135433-3.9135433-10.2586508-3.9135433-14.1721941 0l-8.0050005 8.0050006c-2.6513218 2.6513218-2.6513218 6.9499637 0 9.6012855l7.4469315 7.4469315c1.5739329 1.5739329 3.9877816 1.9431152 5.9602046.9115741l1.720621-.8998532 5.5247537 5.5247537-.224755.2247549c-5.3026435 5.3026436-13.8999274 5.3026436-19.202571 0l-6.50094006-6.5009401c-6.36317227-6.3631723-6.36317227-16.6799129 0-23.0430852l7.14180646-7.14180647c7.2964367-7.29643674 19.1262981-7.29643674 26.4227348 0z" fill="#fff"/></svg>'
 
-    let payButtonNow = document.querySelector('.sticky-pay-button')
-    if (payButtonNow) {
-      payButtonNow.className = 'sticky-pay-button'
-      payButtonNow.style.display = canAction ? 'block' : 'none'
+    let actionButtonNow = document.querySelector('.sticky-connections-action-button')
+    if (actionButtonNow) {
+      actionButtonNow.className = 'sticky-connections-action-button'
+      actionButtonNow.style.display = canAction ? 'block' : 'none'
     } else {
-      payButtonNow = document.createElement('button')
-      payButtonNow.className = 'sticky-pay-button'
-      payButtonNow.innerHTML = `<strong style="font-weight:unset;vertical-align:2px;">${actionButtonText}</strong>`
-      payButtonNow.style = `display:${canAction ? 'block' : 'none'};position:fixed;${actionButtonStyle}height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("data:image/svg+xml,${encodeURIComponent(logoSvg)}");background-position:16px 8px;background-repeat:no-repeat;background-size:29px 40px;`
-      payButtonNow.addEventListener('click', whichDomain.pay)
-      document.body.appendChild(payButtonNow)
+      actionButtonNow = document.createElement('button')
+      actionButtonNow.className = 'sticky-connections-action-button'
+      actionButtonNow.innerHTML = `<strong style="font-weight:unset;vertical-align:2px;">${actionButtonText}</strong>`
+      actionButtonNow.style = `display:${canAction ? 'block' : 'none'};position:fixed;${actionButtonStyle}height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("data:image/svg+xml,${encodeURIComponent(logoSvg)}");background-position:16px 8px;background-repeat:no-repeat;background-size:29px 40px;`
+      actionButtonNow.addEventListener('click', whichDomain.onAction)
+      document.body.appendChild(actionButtonNow)
     }
   }
 
