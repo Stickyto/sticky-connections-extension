@@ -1,6 +1,9 @@
 window.addEventListener(
   'load',
   () => {
+    const { version } = chrome.runtime.getManifest()
+    document.querySelector('.version p').innerHTML = `Version ${version}`
+
     console.warn('[StickyConnectionsExtension] 15 load')
 
     function sendMessageAsync (message) {

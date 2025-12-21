@@ -1,9 +1,3 @@
-// chrome.runtime.onConnect.addListener(() => {
-//   console.warn('Keep-alive connection started');
-// })
-
-// REMOVE ABOVE WHEN GOING TO PROD
-
 console.warn('[StickyConnectionsExtension] 1 BACKGROUND RUNNING!')
 
 const BASE_DOMAIN_API = 'https://sticky.to'

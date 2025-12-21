@@ -15,23 +15,41 @@ function addStyle (deduplicateKey, string) {
 }
 
 function uuid (useUnderscores = false) {
-  const base = !useUnderscores ? 'zzzzzzzz-zzzz-4zzz-yzzz-zzzzzzzzzzzz' : 'zzzzzzzz_zzzz_4zzz_yzzz_zzzzzzzzzzzz'
-  let
-    d = new Date().getTime(),
-    d2 = (performance && performance.now && (performance.now() * 1000)) || 0
-  return base.replace(/[zy]/g, c => {
-    let r = Math.random() * 16
-    if (d > 0) {
-      r = (d + r) % 16 | 0
-      d = Math.floor(d / 16)
-    } else {
-      r = (d2 + r) % 16 | 0
-      d2 = Math.floor(d2 / 16)
-    }
-    return (c == 'z' ? r : (r & 0x7 | 0x8)).toString(16)
-  })
-}
+  // Get 16 random bytes
+  const rnds = crypto.getRandomValues(new Uint8Array(16));
 
+  // RFC 4122: set version (4) and variant (10xxxxxx)
+  rnds[6] = (rnds[6] & 0x0f) | 0x40; // version 4
+  rnds[8] = (rnds[8] & 0x3f) | 0x80; // variant 10xx
+
+  // Precompute hex strings for 0..255
+  const hex = [];
+  for (let i = 0; i < 256; i++) {
+    hex[i] = (i + 0x100).toString(16).substring(1);
+  }
+
+  const sep = useUnderscores ? "_" : "-";
+
+  // Assemble xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  return (
+    hex[rnds[0]] +
+    hex[rnds[1]] +
+    hex[rnds[2]] +
+    hex[rnds[3]] + sep +
+    hex[rnds[4]] +
+    hex[rnds[5]] + sep +
+    hex[rnds[6]] +
+    hex[rnds[7]] + sep +
+    hex[rnds[8]] +
+    hex[rnds[9]] + sep +
+    hex[rnds[10]] +
+    hex[rnds[11]] +
+    hex[rnds[12]] +
+    hex[rnds[13]] +
+    hex[rnds[14]] +
+    hex[rnds[15]]
+  );
+}
 
 function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, maxWidth, maxHeight, borderRadius, onClose, insideElementName = 'iframe', showBlocker = true }) {
   document.body.style.overflow = 'hidden'
@@ -160,8 +178,9 @@ const DOMAINS = new Map([
   [
     'go.xero.com',
     {
-      boot: () => {},
-      canPay: () => {
+      actionButtonStyle: 'bottom:12px;right:8px;',
+      actionButtonText: 'Take payment',
+      canAction: () => {
         function isOnNewInvoice () {
           return /^https:\/\/go\.xero\.com\/app\/[^/]+\/invoicing\/?$/.test(window.location.href)
         }
@@ -171,7 +190,7 @@ const DOMAINS = new Map([
         function isOnViewInvoice () {
           return /^https:\/\/go\.xero\.com\/app\/[^/]+\/invoicing\/view\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(window.location.href)
         }
-        return (isOnNewInvoice() || isOnEditInvoice()) || isOnViewInvoice()
+        return isOnNewInvoice() || isOnEditInvoice() || isOnViewInvoice()
       },
       pay: () => {
         function getTotal() {
@@ -221,10 +240,62 @@ const DOMAINS = new Map([
     }
   ],
   [
+    'qbo.intuit.com',
+    {
+      actionButtonStyle: 'bottom:12px;left:8px;',
+      actionButtonText: 'Take payment',
+      canAction: () => {
+        function isOnNewInvoice () {
+          return window.location.href === 'https://qbo.intuit.com/app/invoice'
+        }
+        function isOnEditInvoice () {
+          return /^https:\/\/qbo\.intuit\.com\/app\/invoice\?.*?\btxnId=\d+\b.*$/i.test(window.location.href)
+        }
+        return isOnNewInvoice() || isOnEditInvoice()
+      },
+      pay: () => {
+        function getTotal() {
+          const valueEl = document.querySelector('div.amount[data-qbo-bind^="textAmount: balanceDueValueText"]')
+          if (!valueEl) throw new Error('QuickBooks: pay: Total value not found')
+
+          const raw = valueEl.textContent.trim()
+          const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
+          if (isNaN(parsed)) throw new Error(`QuickBooks: pay: Invalid number: "${raw}"`)
+
+          return Math.round(parsed * 100)
+        }
+
+        function getUserPaymentId() {
+          const valueEl = document.querySelector('[data-automation-id="input-ref-number-sales"]')
+          if (!valueEl) throw new Error('QuickBooks: pay: Invoice number not found')
+          return valueEl.value
+        }
+
+        try {
+          const total = getTotal()
+          const userPaymentId = getUserPaymentId()
+          console.log('[StickyConnectionsExtension] total', total)
+          console.log('[StickyConnectionsExtension] userPaymentId', userPaymentId)
+          chrome.runtime.sendMessage({
+            type: 'pay',
+            domain: 'qbo.intuit.com',
+            newPayment: {
+              total,
+              userPaymentId
+            }
+          })
+        } catch ({ message }) {
+          alert(message)
+        }
+      }
+    }
+  ],
+  [
     'localhost:3003',
     {
-      boot: () => {},
-      canPay: () => {
+      actionButtonStyle: '',
+      actionButtonText: 'Go',
+      canAction: () => {
         return false
       },
       pay: () => {}
@@ -279,24 +350,65 @@ window.addEventListener('message', (event) => {
     whichAction && whichAction(data)
   });
 
-  console.warn('[StickyConnectionsExtension] extension booted')
-  const whichDomain = DOMAINS.get(window.location.host)
-  console.warn('[StickyConnectionsExtension] whichDomain', whichDomain)
-  if (!whichDomain) {
-    return
-  }
-  await whichDomain.boot()
-  const canPay = whichDomain.canPay()
+  function onMaybeAction () {
+    console.warn('[StickyConnectionsExtension] [onMaybeAction]')
+    const whichDomain = DOMAINS.get(window.location.host)
+    console.warn('[StickyConnectionsExtension] whichDomain', whichDomain)
+    if (!whichDomain) {
+      return
+    }
+    const { actionButtonStyle, actionButtonText, canAction: _canAction } = whichDomain
+    const canAction = _canAction()
 
-  let payButtonNow = document.querySelector('.sticky-pay-button')
-  if (payButtonNow) {
-    payButtonNow.style.display = canPay ? 'block' : 'none'
-  } else {
-    payButtonNow = document.createElement('button')
-    payButtonNow.classList.add('sticky-pay-button')
-    payButtonNow.innerHTML = '<strong style="vertical-align:2px;">Take payment</strong>'
-    payButtonNow.style = `display:${canPay ? 'block' : 'none'};position:fixed;bottom:12px;right:8px;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("https://cdn.sticky.to/symbol-deploy-white.svg"),url("https://cdn.sticky.to/symbol-deploy-background.jpg");background-position:16px 8px,center;background-repeat:no-repeat,no-repeat;background-size:29px 40px,cover;`
-    payButtonNow.addEventListener('click', whichDomain.pay)
-    document.body.appendChild(payButtonNow)
+    const logoSvg = '<svg height="74" viewBox="0 0 50 74" width="50" xmlns="http://www.w3.org/2000/svg"><path d="m42.280552 34.3888116c6.3631722 6.3631723 6.3631722 16.6799129 0 23.0430852l-7.1418065 7.1418065c-7.2964367 7.2964367-19.1262981 7.2964367-26.42273481 0l-4.50043019-4.5004302c-4.9170418-4.9170418-5.52395306-12.6622709-1.47732324-18.2780523l.19309544-.2616611 6.00516699 6.005167c-.73677768 2.51395-.04291801 5.2295914 1.80948401 7.0819934l4.0815984 4.0815985c3.9135433 3.9135433 10.2586508 3.9135433 14.1721941 0l8.0050005-8.0050006c2.6513218-2.6513218 2.6513218-6.9499637 0-9.6012855l-7.4469315-7.4469315c-1.5739329-1.5739329-3.9877816-1.9431152-5.9602046-.9115741l-1.720621.8998532-5.5247537-5.5247537.224755-.2247549c5.3026435-5.3026436 13.8999274-5.3026436 19.202571 0zm3.5038675-20.4620847c4.9170418 4.9170418 5.5239531 12.6622709 1.4773232 18.2780523l-.1930954.2616611-6.005167-6.005167c.7367777-2.51395.042918-5.2295914-1.809484-7.0819934l-4.0815984-4.0815985c-3.9135433-3.9135433-10.2586508-3.9135433-14.1721941 0l-8.0050005 8.0050006c-2.6513218 2.6513218-2.6513218 6.9499637 0 9.6012855l7.4469315 7.4469315c1.5739329 1.5739329 3.9877816 1.9431152 5.9602046.9115741l1.720621-.8998532 5.5247537 5.5247537-.224755.2247549c-5.3026435 5.3026436-13.8999274 5.3026436-19.202571 0l-6.50094006-6.5009401c-6.36317227-6.3631723-6.36317227-16.6799129 0-23.0430852l7.14180646-7.14180647c7.2964367-7.29643674 19.1262981-7.29643674 26.4227348 0z" fill="#fff"/></svg>'
+
+    let payButtonNow = document.querySelector('.sticky-pay-button')
+    if (payButtonNow) {
+      payButtonNow.className = 'sticky-pay-button'
+      payButtonNow.style.display = canAction ? 'block' : 'none'
+    } else {
+      payButtonNow = document.createElement('button')
+      payButtonNow.className = 'sticky-pay-button'
+      payButtonNow.innerHTML = `<strong style="font-weight:unset;vertical-align:2px;">${actionButtonText}</strong>`
+      payButtonNow.style = `display:${canAction ? 'block' : 'none'};position:fixed;${actionButtonStyle}height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("data:image/svg+xml,${encodeURIComponent(logoSvg)}");background-position:16px 8px;background-repeat:no-repeat;background-size:29px 40px;`
+      payButtonNow.addEventListener('click', whichDomain.pay)
+      document.body.appendChild(payButtonNow)
+    }
   }
+
+  window.addEventListener(
+    'stickyConnections:onMaybeAction',
+    () => {
+      setTimeout(onMaybeAction, 0)
+    }
+  )
+
+  onMaybeAction()
+
+  let onMaybeActionDebouncer = null
+  let onMaybeActionIsRunning = false
+
+  const observer = new MutationObserver(
+    () => {
+      if (onMaybeActionIsRunning) return
+
+      clearTimeout(onMaybeActionDebouncer)
+      onMaybeActionDebouncer = setTimeout(
+        () => {
+          onMaybeActionIsRunning = true
+          try {
+            onMaybeAction()
+          } finally {
+            onMaybeActionIsRunning = false
+          }
+        },
+        250
+      )
+    }
+  )
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  })
 })()
