@@ -334,6 +334,19 @@ const DOMAINS = new Map([
           if (!valueEl) throw new Error('HubSpot->onAction: Currency not found')
           return valueEl.value
         }
+
+        function getName () {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-title-link"]')
+          return valueEl ? valueEl.innerText : undefined
+        }
+        function getEmail () {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-email"] span a')
+          return valueEl ? valueEl.innerText : undefined
+        }
+        function getPhone () {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-phone"] a span')
+          return valueEl ? valueEl.innerText : undefined
+        }
         
         try {
           const total = getTotal()
@@ -346,7 +359,10 @@ const DOMAINS = new Map([
             newPayment: {
               total,
               currency,
-              userPaymentId
+              userPaymentId,
+              name: getName(),
+              email: getEmail(),
+              phone: getPhone()
             }
           })
         } catch ({ message }) {
