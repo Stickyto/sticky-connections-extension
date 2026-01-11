@@ -76,7 +76,20 @@ const FUNCTIONS = new Map([
 
         const user = await getUser()
         console.warn('[StickyConnectionsExtension] 8', JSON.stringify(user))
-        const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager-2?userPrivateKey=${user.user.privateKey}&userPublicKey=${user.user.publicKey}&federatedUserPrivateKey=${user.federatedUser.privateKey}&setPaymentTotal=${data.newPayment.total}&setPaymentUserPaymentId=${data.newPayment.userPaymentId}`
+        const urlParts = [
+          `userPrivateKey=${user.user.privateKey}`,
+          `userPublicKey=${user.user.publicKey}`,
+          `federatedUserPrivateKey=${user.federatedUser.privateKey}`,
+          data.newPayment.total !== undefined && `setPaymentTotal=${data.newPayment.total}`,
+          data.newPayment.currency !== undefined && `setPaymentCurrency=${data.newPayment.currency}`,
+          data.newPayment.userPaymentId !== undefined && `setPaymentUserPaymentId=${encodeURIComponent(data.newPayment.userPaymentId)}`,
+
+          data.newPayment.name !== undefined && `setPaymentName=${encodeURIComponent(data.newPayment.name)}`,
+          data.newPayment.email !== undefined && `setPaymentEmail=${encodeURIComponent(data.newPayment.email)}`,
+          data.newPayment.phone !== undefined && `setPaymentPhone=${encodeURIComponent(data.newPayment.phone)}`,
+        ]
+          .filter(_ => _)
+        const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager-2?${urlParts.join('&')}`
         sendReponseToPage({ action: 'popUpIframe', url: url })
       } catch ({ message }) {
         sendReponseToPage({ action: 'alert', message })

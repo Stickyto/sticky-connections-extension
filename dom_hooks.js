@@ -60,7 +60,7 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
     return
   }
   addStyle(
-    'pop-up-something',
+    'pop-up-something-1',
     `
       .pop-up-frame--blocker {
         background-color: rgba(0, 0, 0, 0.85);
@@ -172,7 +172,6 @@ function popUpIframe ({ html, inlineStyle, src, canClose = true, width, height, 
     elementId: insideElementId
   }
 }
-
 
 const DOMAINS = new Map([
   [
@@ -291,6 +290,72 @@ const DOMAINS = new Map([
     }
   ],
   [
+    'app.hubspot.com',
+    {
+      actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
+      actionButtonText: 'Take payment',
+      customStyle: `
+        .pop-up-frame--blocker {
+          z-index: 10000 !important;
+        }
+        .pop-up-frame--inside {
+          z-index: 10001 !important;
+        }
+        .pop-up-frame--button {
+          z-index: 10001 !important;
+        }
+      `,
+      canAction: () => {
+        function isOnEditInvoice () {
+          return /^https:\/\/app\.hubspot\.com\/contacts\/\d+\/objects\/[\d-]+\/views\/[^/]+\/list\/?$/.test(window.location.href) && document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"]')
+        }
+        return isOnEditInvoice()
+      },
+      onAction: () => {
+        function getTotal() {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="property-input-hs_balance_due"]')
+          if (!valueEl) throw new Error('QuickBooks->onAction: Total value not found')
+
+          const raw = valueEl.value.trim()
+          const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
+          if (isNaN(parsed)) throw new Error(`HubSpot->onAction: Invalid number: "${raw}"`)
+
+          return Math.round(parsed * 100)
+        }
+
+        function getUserPaymentId() {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-test-id="invoice-highlight-header-content"]')
+          if (!valueEl) throw new Error('HubSpot->onAction: Invoice number not found')
+          return valueEl.innerText
+        }
+
+        function getCurrency () {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="property-input-hs_currency"]')
+          if (!valueEl) throw new Error('HubSpot->onAction: Currency not found')
+          return valueEl.value
+        }
+        
+        try {
+          const total = getTotal()
+          const currency = getCurrency()
+          const userPaymentId = getUserPaymentId()
+          console.log('[StickyConnectionsExtension] [HubSpot]', { total, currency, userPaymentId })
+          chrome.runtime.sendMessage({
+            type: 'pay',
+            domain: 'app.hubspot.com',
+            newPayment: {
+              total,
+              currency,
+              userPaymentId
+            }
+          })
+        } catch ({ message }) {
+          alert(message)
+        }
+      }
+    }
+  ],
+  [
     'localhost:3003',
     {
       actionButtonStyle: '',
@@ -353,11 +418,12 @@ window.addEventListener('message', (event) => {
   function onMaybeAction () {
     console.warn('[StickyConnectionsExtension] [onMaybeAction]')
     const whichDomain = DOMAINS.get(window.location.host)
-    console.warn('[StickyConnectionsExtension] whichDomain', whichDomain)
+    console.warn('[StickyConnectionsExtension] [1] whichDomain', whichDomain)
     if (!whichDomain) {
       return
     }
-    const { actionButtonStyle, actionButtonText, canAction: _canAction } = whichDomain
+    console.warn('[StickyConnectionsExtension] [2] whichDomain', whichDomain)
+    const { actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichDomain
     const canAction = _canAction()
 
     const logoSvg = '<svg height="74" viewBox="0 0 50 74" width="50" xmlns="http://www.w3.org/2000/svg"><path d="m42.280552 34.3888116c6.3631722 6.3631723 6.3631722 16.6799129 0 23.0430852l-7.1418065 7.1418065c-7.2964367 7.2964367-19.1262981 7.2964367-26.42273481 0l-4.50043019-4.5004302c-4.9170418-4.9170418-5.52395306-12.6622709-1.47732324-18.2780523l.19309544-.2616611 6.00516699 6.005167c-.73677768 2.51395-.04291801 5.2295914 1.80948401 7.0819934l4.0815984 4.0815985c3.9135433 3.9135433 10.2586508 3.9135433 14.1721941 0l8.0050005-8.0050006c2.6513218-2.6513218 2.6513218-6.9499637 0-9.6012855l-7.4469315-7.4469315c-1.5739329-1.5739329-3.9877816-1.9431152-5.9602046-.9115741l-1.720621.8998532-5.5247537-5.5247537.224755-.2247549c5.3026435-5.3026436 13.8999274-5.3026436 19.202571 0zm3.5038675-20.4620847c4.9170418 4.9170418 5.5239531 12.6622709 1.4773232 18.2780523l-.1930954.2616611-6.005167-6.005167c.7367777-2.51395.042918-5.2295914-1.809484-7.0819934l-4.0815984-4.0815985c-3.9135433-3.9135433-10.2586508-3.9135433-14.1721941 0l-8.0050005 8.0050006c-2.6513218 2.6513218-2.6513218 6.9499637 0 9.6012855l7.4469315 7.4469315c1.5739329 1.5739329 3.9877816 1.9431152 5.9602046.9115741l1.720621-.8998532 5.5247537 5.5247537-.224755.2247549c-5.3026435 5.3026436-13.8999274 5.3026436-19.202571 0l-6.50094006-6.5009401c-6.36317227-6.3631723-6.36317227-16.6799129 0-23.0430852l7.14180646-7.14180647c7.2964367-7.29643674 19.1262981-7.29643674 26.4227348 0z" fill="#fff"/></svg>'
@@ -367,10 +433,11 @@ window.addEventListener('message', (event) => {
       actionButtonNow.className = 'sticky-connections-action-button'
       actionButtonNow.style.display = canAction ? 'block' : 'none'
     } else {
+      customStyle && addStyle('pop-up-something-2', customStyle)
       actionButtonNow = document.createElement('button')
       actionButtonNow.className = 'sticky-connections-action-button'
       actionButtonNow.innerHTML = `<strong style="font-weight:unset;vertical-align:2px;">${actionButtonText}</strong>`
-      actionButtonNow.style = `display:${canAction ? 'block' : 'none'};position:fixed;${actionButtonStyle}height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("data:image/svg+xml,${encodeURIComponent(logoSvg)}");background-position:16px 8px;background-repeat:no-repeat;background-size:29px 40px;`
+      actionButtonNow.style = `display:${canAction ? 'block' : 'none'};position:fixed;height:56px;font:18px -apple-system,BlinkMacSystemFont,"Segoe UI","Roboto",sans-serif;font-weight:bold;padding:0 16px 0 56px;border-radius:5000px;background-color:#211552;color:white;z-index:1000;border:0;box-shadow:0 7px 14px 0 rgb(60 66 87 / 20%),0 3px 6px 0 rgb(0 0 0 / 20%);background-image:url("data:image/svg+xml,${encodeURIComponent(logoSvg)}");background-position:16px 8px;background-repeat:no-repeat;background-size:29px 40px;${actionButtonStyle}`
       actionButtonNow.addEventListener('click', whichDomain.onAction)
       document.body.appendChild(actionButtonNow)
     }
@@ -407,8 +474,11 @@ window.addEventListener('message', (event) => {
     }
   )
 
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  })
+  observer.observe(
+    document.body,
+    {
+      childList: true,
+      subtree: true
+    }
+  )
 })()

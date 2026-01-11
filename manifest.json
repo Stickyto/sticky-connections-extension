@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sticky Connections",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Payments that live where you work. Where ecomm, contactless and AI converge.",
   "permissions": ["storage"],
   "host_permissions": [
@@ -18,7 +18,9 @@
         "https://*.sticky.to/*",
 
         "https://go.xero.com/*",
-        "https://qbo.intuit.com/*"
+
+        "https://qbo.intuit.com/*",
+        "https://app.hubspot.com/*"
       ],
       "js": ["dom_hooks.js"],
       "run_at": "document_idle"
