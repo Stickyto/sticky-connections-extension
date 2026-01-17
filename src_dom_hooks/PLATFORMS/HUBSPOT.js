@@ -58,7 +58,7 @@ module.exports = {
         })(),
         (() => {
           const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-test-id="invoice-highlight-header-content"]')
-          return valueEl ? valueEl.innerText : undefined
+          return valueEl ? valueEl.textContent.trim() : undefined
         })()
       ]
       const valueEl = valueStrings.find(_ => _)
@@ -73,22 +73,21 @@ module.exports = {
 
     function getName () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-title-link"]')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     function getEmail () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-email"] span a')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     function getPhone () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-phone"] a span')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     
     try {
       const total = getTotal()
       const currency = getCurrency()
       const userPaymentId = getUserPaymentId()
-      console.log('[StickyConnectionsExtension] [HubSpot]', { total, currency, userPaymentId })
       chrome.runtime.sendMessage({
         platformId: 'HUBSPOT',
         type: 'pay',

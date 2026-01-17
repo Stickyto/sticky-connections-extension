@@ -55,8 +55,6 @@ module.exports = {
     try {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
-      console.log('[StickyConnectionsExtension] total', total)
-      console.log('[StickyConnectionsExtension] userPaymentId', userPaymentId)
       chrome.runtime.sendMessage({
         platformId: 'XERO',
         type: 'pay',

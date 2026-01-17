@@ -73,25 +73,3 @@ window.addEventListener(
     })
   }
 )
-
-// document.getElementById('send').addEventListener('click', () => {
-//   const ip = document.getElementById('ip').value.trim()
-//   const tid = document.getElementById('tid').value.trim()
-//   const token = document.getElementById('token').value.trim()
-//   const amount = parseInt(document.getElementById('amount').value.trim(), 10)
-//   const reference = document.getElementById('reference').value.trim() || 'WEB'
-
-//   if (!ip || !tid || !token || !amount) {
-//     alert('Please fill all fields')
-//     return
-//   }
-
-//   chrome.runtime.sendMessage({ type: 'start-sale', ip, tid, token, amount, reference }, (response) => {
-//     const out = document.getElementById('output')
-//     if (chrome.runtime.lastError) {
-//       out.textContent = 'Runtime error: ' + chrome.runtime.lastError.message
-//       return
-//     }
-//     out.textContent = JSON.stringify(response, null, 2)
-//   })
-// })

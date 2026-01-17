@@ -92,7 +92,7 @@ module.exports = {
         })(),
         (() => {
           const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-test-id="invoice-highlight-header-content"]')
-          return valueEl ? valueEl.innerText : undefined
+          return valueEl ? valueEl.textContent.trim() : undefined
         })()
       ]
       const valueEl = valueStrings.find(_ => _)
@@ -107,22 +107,21 @@ module.exports = {
 
     function getName () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-title-link"]')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     function getEmail () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-email"] span a')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     function getPhone () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="contact-chicklet-phone"] a span')
-      return valueEl ? valueEl.innerText : undefined
+      return valueEl ? valueEl.textContent.trim() : undefined
     }
     
     try {
       const total = getTotal()
       const currency = getCurrency()
       const userPaymentId = getUserPaymentId()
-      console.log('[StickyConnectionsExtension] [HubSpot]', { total, currency, userPaymentId })
       chrome.runtime.sendMessage({
         platformId: 'HUBSPOT',
         type: 'pay',
@@ -144,6 +143,7 @@ module.exports = {
 module.exports = {
   id: 'QUICKBOOKS',
   initialMatch: '^https:\\/\\/qbo\\.intuit\\.com\\/app\\/invoice(?:$|\\?.*\\btxnId=\\d+\\b.*$)',
+  onBootHideSelectors: ['div[data-theme="quickbooks"][role="alert"][class*="paymentSignupPageMessage"]', 'div[id="payment-method-widget"]'],
   actionButtonStyle: 'bottom:12px;left:8px;',
   actionButtonText: 'Take payment',
   canAction: () => {
@@ -157,33 +157,62 @@ module.exports = {
   },
   onAction: () => {
     function getTotal() {
-      const valueEl = document.querySelector('div.amount[data-qbo-bind^="textAmount: balanceDueValueText"]')
+      let valueStrings = [
+        (() => {
+          const valueEl = document.querySelector('div.amount[data-qbo-bind^="textAmount: balanceDueValueText"]')
+          return valueEl ? valueEl.textContent.trim() : undefined
+        })(),
+        (() => {
+          const valueEl = document.querySelector('[data-cy="totalRow"] label + p')
+          return valueEl ? valueEl.textContent.trim() : undefined
+        })()
+      ]
+      const valueEl = valueStrings.find(_ => _)
       if (!valueEl) throw new Error('QuickBooks->onAction: Total value not found')
 
-      const raw = valueEl.textContent.trim()
-      const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
-      if (isNaN(parsed)) throw new Error(`QuickBooks->onAction: Invalid number: "${raw}"`)
+      const parsed = parseFloat(valueEl.replace(/[^0-9.]/g, ''))
+      if (isNaN(parsed)) throw new Error(`QuickBooks->onAction: Invalid number: "${valueEl}"`)
 
       return Math.round(parsed * 100)
     }
 
     function getUserPaymentId() {
-      const valueEl = document.querySelector('[data-automation-id="input-ref-number-sales"]')
+      const valueEl = document.querySelector('[data-automation-id="input-ref-number-sales"]') || document.querySelector('[data-automation-id="reference_number"]')
       if (!valueEl) throw new Error('QuickBooks->onAction: Invoice number not found')
       return valueEl.value
+    }
+
+    function getName () {
+      let valueStrings = [
+        (() => {
+          const valueEl = document.querySelector('input[aria-label="Customer"]') || document.querySelector('input[aria-label="Select a customer"]')
+          return valueEl ? valueEl.value : undefined
+        })()
+      ]
+      return valueStrings.find(_ => _)
+    }
+
+    function getEmail () {
+      let valueStrings = [
+        (() => {
+          const valueEl = document.querySelector('input[aria-label="Cc/Bcc"]') || document.querySelector('input[aria-label="Customer email"]')
+          return valueEl ? valueEl.value.split(',')[0].trim() : undefined
+        })()
+      ]
+      return valueStrings.find(_ => _)
     }
 
     try {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
-      console.log('[StickyConnectionsExtension] total', total)
-      console.log('[StickyConnectionsExtension] userPaymentId', userPaymentId)
       chrome.runtime.sendMessage({
         platformId: 'QUICKBOOKS',
         type: 'pay',
         newPayment: {
           total,
-          userPaymentId
+          userPaymentId,
+          name: getName(),
+          email: getEmail()
         }
       })
     } catch ({ message }) {
@@ -250,8 +279,6 @@ module.exports = {
     try {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
-      console.log('[StickyConnectionsExtension] total', total)
-      console.log('[StickyConnectionsExtension] userPaymentId', userPaymentId)
       chrome.runtime.sendMessage({
         platformId: 'XERO',
         type: 'pay',
