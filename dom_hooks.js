@@ -317,13 +317,8 @@ const ACTIONS = require('./ACTIONS')
 const addStyle = require('./addStyle')
 
 window.addEventListener('message', (event) => {
-  console.warn('[StickyConnectionsExtension] XYZ 1', event)
   if (event.origin !== window.origin && event.origin !== location.origin) return
   if (event.data?.source !== 'sticky-connections-extension') return
-
-  console.warn('[StickyConnectionsExtension] XYZ 2')
-
-  // Forward to background
   chrome.runtime.sendMessage(
     {
       type: event.data.type,
