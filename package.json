@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "browserify": "^17.0.1"
+  },
+  "scripts": {
+    "build": "browserify src_dom_hooks/index.js --bare --no-builtins -o dom_hooks.js"
+  }
+}
