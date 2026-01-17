@@ -1,6 +1,7 @@
 module.exports = {
   id: 'XERO',
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
+  onBootHideSelectors: ['[data-automationid="StartStripeSetupBanner-banner"]'],
   actionButtonStyle: 'bottom:12px;right:8px;',
   actionButtonText: 'Take payment',
   canAction: () => {
@@ -35,7 +36,6 @@ module.exports = {
       if (value1) {
         return value1.value
       }
-
       const container = document.querySelector('.ReadOnlyInvoice-invoiceNumber')
       if (!container) throw new Error('[1] Xero->onAction: Invoice number container not found')
 
@@ -44,8 +44,12 @@ module.exports = {
           return node.textContent.trim()
         }
       }
-
       throw new Error('Xero->onAction: Invoice number text node not found')
+    }
+
+    function getName () {
+      const el = document.querySelector('[data-automationid="contacts-picker-search-field--input"]')
+      return el ? el.value : undefined
     }
 
     try {
@@ -58,7 +62,8 @@ module.exports = {
         type: 'pay',
         newPayment: {
           total,
-          userPaymentId
+          userPaymentId,
+          name: getName()
         }
       })
     } catch ({ message }) {

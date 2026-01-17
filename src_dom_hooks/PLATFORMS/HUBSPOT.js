@@ -1,6 +1,7 @@
 module.exports = {
   id: 'HUBSPOT',
   initialMatch: '^https:\\/\\/(?:app|app-eu1)\\.hubspot\\.com\\/(?:contacts\\/\\d+\\/objects\\/[\\d-]+\\/views\\/[^/]+\\/list\\/?|quotes\\/\\d+\\/details\\/\\d+)(?:\\?.*)?$',
+  onBootHideSelectors: ['[data-test-id="commerce-set-up-payments"]'],
   actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
   actionButtonText: 'Take payment',
   customStyle: `
@@ -22,26 +23,52 @@ module.exports = {
   },
   onAction: () => {
     function getTotal() {
-      const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="property-input-hs_balance_due"]')
-      if (!valueEl) throw new Error('QuickBooks->onAction: Total value not found')
+      let valueStrings = [
+        (() => {
+          const dts = document.querySelectorAll('dl > dt')
+          for (const dt of dts) {
+            if (dt.textContent.includes('Quote amount')) {
+              return dt.nextElementSibling?.innerText.trim()
+            }
+          }
+        })(),
+        (() => {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="property-input-hs_balance_due"]')
+          return valueEl ? valueEl.value.trim() : undefined
+        })()
+      ]
 
-      const raw = valueEl.value.trim()
-      const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
-      if (isNaN(parsed)) throw new Error(`HubSpot->onAction: Invalid number: "${raw}"`)
+      const valueEl = valueStrings.find(_ => _)
+      if (!valueEl) throw new Error('HubSpot->onAction: Total value not found; is the side bar open?')
+      const parsed = parseFloat(valueEl.replace(/[^0-9.]/g, ''))
+      if (isNaN(parsed)) throw new Error(`HubSpot->onAction: Invalid number: "${valueEl}"`)
 
       return Math.round(parsed * 100)
     }
 
     function getUserPaymentId() {
-      const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-test-id="invoice-highlight-header-content"]')
-      if (!valueEl) throw new Error('HubSpot->onAction: Invoice number not found')
-      return valueEl.innerText
+      let valueStrings = [
+        (() => {
+          const dts = document.querySelectorAll('dl > dt')
+          for (const dt of dts) {
+            if (dt.textContent.includes('Quote number')) {
+              return dt.nextElementSibling?.innerText.trim()
+            }
+          }
+        })(),
+        (() => {
+          const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-test-id="invoice-highlight-header-content"]')
+          return valueEl ? valueEl.innerText : undefined
+        })()
+      ]
+      const valueEl = valueStrings.find(_ => _)
+      if (!valueEl) throw new Error('HubSpot->onAction: Reference value not found; is the side bar open?')
+      return valueEl
     }
 
     function getCurrency () {
       const valueEl = document.querySelector('[data-crm-location="CRM_OBJECT_PREVIEW"] [data-selenium-test="property-input-hs_currency"]')
-      if (!valueEl) throw new Error('HubSpot->onAction: Currency not found')
-      return valueEl.value
+      return valueEl ? valueEl.value : undefined
     }
 
     function getName () {
