@@ -35,7 +35,7 @@ window.addEventListener(
 
     function sendMessageAsync (message) {
       return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, response => {
+        chrome.runtime && chrome.runtime.sendMessage(message, response => {
           console.warn('[StickyConnectionsExtension] 16 DEBUG', JSON.stringify(response))
           if (chrome.runtime.lastError) {
             return reject(new Error(chrome.runtime.lastError.message));
@@ -66,7 +66,7 @@ window.addEventListener(
     )
 
     let storageData = {}
-    storage.get(['cPrivateKey', 'cFederatedUserPrivateKey'])
+    storage.get(['cPrivateKey', 'cFederatedUserPrivateKey', 'cReferenceFunction', 'cTotalFunction'])
       .then(data => {
         console.warn('[StickyConnectionsExtension] 20 data from storage', data)
         storageData = {
@@ -87,7 +87,7 @@ window.addEventListener(
       storage.set({ [_.target.id]: _.target.value })
     }
 
-    const formElements = Array.from(document.querySelectorAll('input'))
+    const formElements = [...Array.from(document.querySelectorAll('input')), ...Array.from(document.querySelectorAll('textarea'))]
     formElements.forEach(_ => {
       console.warn('[StickyConnectionsExtension] 25 form element', _)
       _.addEventListener(

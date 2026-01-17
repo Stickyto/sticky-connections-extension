@@ -31,14 +31,14 @@
     }
     body main {
       position: absolute;
-      width: calc(100% - 2rem);
+      width: calc(100% - 32px);
       top: 50%;
       left: 50%;
       max-width: 320px;
       transform: translateX(-50%) translateY(-50%);
     }
     body main > * + * {
-      margin-top: 16px;
+      margin-top: 24px;
     }
     body button, body input[type=submit] {
       display: block;
@@ -60,7 +60,6 @@
       display: block;
       margin-bottom: 8px;
       color: #211552;
-      text-align: center;
     }
     body button strong, body input[type=submit] strong {
       min-height: 32px;
@@ -82,11 +81,11 @@
       box-shadow: 0 2px 5px 0 rgb(60 66 87 / 12%), 0 1px 1px 0 rgb(0 0 0 / 12%), #cccbf0 0px 0px 0px 3px !important;
       outline: 0;
     }
-    body input {
+    body input, body textarea {
       width: 100%;
       height: 40px;
       line-height: 32px;
-      padding: .1rem 8px;
+      padding: 2px 8px;
       border-radius: 5px;
       border: 1px solid #DFE4EA;
       background-color: #fff;
@@ -94,8 +93,32 @@
       appearance: none;
       transition: opacity 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
     }
-    body input:focus {
+    body input:focus, body textarea:focus {
       box-shadow: 0 2px 5px 0 rgb(60 66 87 / 12%), 0 1px 1px 0 rgb(0 0 0 / 12%), #cccbf0 0px 0px 0px 3px;
+    }
+    body textarea {
+      min-height: 160px;
+      line-height: 18px;
+      resize: vertical;
+      tab-size: 2;
+      font-size: 12px;
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        "Liberation Mono",
+        "Courier New",
+        monospace;
+    }
+    details > summary {
+      cursor: default;
+      color: #211552;
+      opacity: 0.5;
+    }
+    details > div {
+      margin-top: 16px;
     }
     .banner {
       display: none;
@@ -106,6 +129,7 @@
     }
     .version p {
       text-align: center;
+      color: #211552;
     }
   </style>
 </head>
@@ -117,13 +141,25 @@
 
     <div>
       <label for="cPrivateKey"><span>Private key</span></label>
-      <input id="cPrivateKey" type="text" placeholder="private-" required>
+      <input id="cPrivateKey" type="text" placeholder="private-" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off">
     </div>
 
     <div>
       <label for="cFederatedUserPrivateKey"><span>Team member private key</span></label>
-      <input id="cFederatedUserPrivateKey" type="text" required>
+      <input id="cFederatedUserPrivateKey" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off">
     </div>
+
+    <details>
+      <summary>Advanced settings</summary>
+      <div>
+        <label for="cReferenceFunction"><span>Reference DOM function</span></label>
+        <textarea id="cReferenceFunction" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+      </div>
+      <div>
+        <label for="cTotalFunction"><span>Total DOM function</span></label>
+        <textarea id="cTotalFunction" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+      </div>
+    </details>
 
     <div>
       <button><strong><svg height="28" viewBox="0 0 28 28" width="28" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" style="stroke-width:3.36163;fill:none;fill-rule:evenodd;stroke-linecap:round;stroke-linejoin:round" transform="translate(5 5)"><path d="m0 11.093379 4.859083 7.670628"></path><path d="m17.9999998 0c-2.8995607 3.38490816-5.0897135 6.13454522-6.5704584 8.24891119-1.48074488 2.11436601-3.67089769 5.61939781-6.5704584 10.51509561"></path></g></svg>Test connection</strong></button>
