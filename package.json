@@ -1,8 +1,11 @@
 {
+  "name": "sticky-connections-extension",
   "devDependencies": {
-    "browserify": "^17.0.1"
+    "browserify": "^17.0.1",
+    "watchify": "^4.0.0"
   },
   "scripts": {
-    "build": "browserify src_dom_hooks/index.js --bare --no-builtins -o dom_hooks.js"
+    "build": "browserify src_dom_hooks/index.js --bare --no-builtins -o dom_hooks.js",
+    "watch": "watchify src_dom_hooks/index.js --bare --no-builtins --verbose -o dom_hooks.js"
   }
 }

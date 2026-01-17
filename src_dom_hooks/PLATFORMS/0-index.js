@@ -1,0 +1,9 @@
+const PLATFORM_HUBSPOT = require('./HUBSPOT')
+const PLATFORM_QUICKBOOKS = require('./QUICKBOOKS')
+const PLATFORM_XERO = require('./XERO')
+
+module.exports = [
+  PLATFORM_HUBSPOT,
+  PLATFORM_QUICKBOOKS,
+  PLATFORM_XERO
+]
