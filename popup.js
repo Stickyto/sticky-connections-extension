@@ -1,7 +1,34 @@
+const storage = (() => {
+  const hasChromeStorage = chrome && chrome.storage && chrome.storage.local
+  const get = keys => new Promise(resolve => {
+    if (hasChromeStorage) {
+      chrome.storage.local.get(keys, resolve)
+    } else {
+      const out = {}
+      keys.forEach(k => {
+        const v = localStorage.getItem(k)
+        if (v !== null) out[k] = v
+      })
+      resolve(out)
+    }
+  })
+  const set = obj => new Promise(resolve => {
+    if (hasChromeStorage) {
+      chrome.storage.local.set(obj, resolve)
+    } else {
+      Object.entries(obj).forEach(([k, v]) => {
+        localStorage.setItem(k, v)
+      })
+      resolve()
+    }
+  })
+  return { get, set }
+})()
+
 window.addEventListener(
   'load',
   () => {
-    const { version } = chrome.runtime.getManifest()
+    const { version } = chrome?.runtime?.getManifest() || { version: '???' }
     document.querySelector('.version p').innerHTML = `Version ${version}`
 
     console.warn('[StickyConnectionsExtension] 15 load')
@@ -24,7 +51,6 @@ window.addEventListener(
       'click',
       () => {
         console.warn('[StickyConnectionsExtension] 17 ON CLICK!')
-
         sendMessageAsync({ type: 'test-connection', ...storageData })
           .then(message => {
             console.warn('[StickyConnectionsExtension] 18 RETURNED 1', message)
@@ -40,10 +66,9 @@ window.addEventListener(
     )
 
     let storageData = {}
-    chrome.storage.local.get(
-      ['cPrivateKey', 'cFederatedUserPrivateKey'],
-      data => {
-        console.warn('[StickyConnectionsExtension] 20 data from chrome storage', data)
+    storage.get(['cPrivateKey', 'cFederatedUserPrivateKey'])
+      .then(data => {
+        console.warn('[StickyConnectionsExtension] 20 data from storage', data)
         storageData = {
           ...storageData,
           ...data
@@ -53,14 +78,13 @@ window.addEventListener(
           document.getElementById(_).value = data[_]
         })
         console.warn('[StickyConnectionsExtension] 22 storageData after ... munging', storageData)
-      }
-    )
+      })
 
     function fiOnChange(_) {
       console.warn('[StickyConnectionsExtension] 23 fiOnChange', _)
       storageData[_.target.id] = _.target.value
       console.warn('[StickyConnectionsExtension] 24 fiOnChange storageData after update', storageData)
-      chrome.storage.local.set({ [_.target.id]: _.target.value })
+      storage.set({ [_.target.id]: _.target.value })
     }
 
     const formElements = Array.from(document.querySelectorAll('input'))
