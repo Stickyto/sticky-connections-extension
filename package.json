@@ -1,11 +1,13 @@
 {
   "name": "sticky-connections-extension",
+  "version": "1.3.0",
   "devDependencies": {
     "browserify": "^17.0.1",
     "watchify": "^4.0.0"
   },
   "scripts": {
     "build": "browserify src_dom_hooks/index.js --bare --no-builtins -o dom_hooks.js",
-    "watch": "watchify src_dom_hooks/index.js --bare --no-builtins --verbose -o dom_hooks.js"
+    "watch": "watchify src_dom_hooks/index.js --bare --no-builtins --verbose -o dom_hooks.js",
+    "zip": "zip ../openbox-cdn/files/sticky-connections-extension-$npm_package_version.zip manifest.json popup.html popup.js icon.png background.js dom_hooks.js"
   }
 }
