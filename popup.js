@@ -66,7 +66,7 @@ window.addEventListener(
     )
 
     let storageData = {}
-    storage.get(['cPrivateKey', 'cFederatedUserPrivateKey', 'cReferenceFunction', 'cTotalFunction'])
+    storage.get(['cPrivateKey', 'cFederatedUserPrivateKey', 'cRegex', 'cPaymentTotalQuerySelector', 'cPaymentReferenceQuerySelector'])
       .then(data => {
         console.warn('[StickyConnectionsExtension] 20 data from storage', data)
         storageData = {

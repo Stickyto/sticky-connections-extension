@@ -312,6 +312,8 @@ module.exports = function addStyle (deduplicateKey, string) {
 }
 
 },{}],7:[function(require,module,exports){
+if (!window.location.href) return
+
 const PLATFORMS = require('./PLATFORMS/0-index')
 const ACTIONS = require('./ACTIONS')
 const addStyle = require('./addStyle')
@@ -327,6 +329,29 @@ window.addEventListener('message', (event) => {
   )
 })
 
+function runQuerySelector (selector) {
+  let el
+  try {
+    el = document.querySelector(selector)
+  } catch (e) {
+    console.warn('[StickyConnectionsExtension] invalid selector', selector, e)
+    return undefined
+  }
+  if (!el) {
+    return undefined
+  }
+  if (
+    el instanceof HTMLInputElement ||
+    el instanceof HTMLTextAreaElement ||
+    el instanceof HTMLSelectElement
+  ) {
+    const v = el.value
+    return v != null && v !== '' ? v : undefined
+  }
+  const text = el.textContent?.trim()
+  return text || undefined
+}
+
 ;(async function () {
   chrome.runtime.onMessage.addListener(data => {
     console.warn('[StickyConnectionsExtension] FROM S data', data)
@@ -334,15 +359,74 @@ window.addEventListener('message', (event) => {
     whichAction && whichAction(data)
   });
 
-  function onMaybeAction () {
-    console.warn('[StickyConnectionsExtension] [onMaybeAction]')
-    const whichPlatform = PLATFORMS.find(platform =>
-      new RegExp(platform.initialMatch, 'i').test(window.location.href)
+  let { cRegex, cPaymentTotalQuerySelector, cPaymentReferenceQuerySelector } = await new Promise(resolve => {
+    chrome.storage.local.get(
+      null,
+      resolve
     )
-    console.warn('[StickyConnectionsExtension] [1] whichPlatform', whichPlatform)
+  })
+  if (cRegex) {
+    cRegex = cRegex.trim()
+      .replace(/\\\\/g, '\\')
+      .replace(/^\/|\/$/g, '')
+  }
+
+  const customPlatform = (() => {
+    if (!cRegex || !cPaymentTotalQuerySelector || !cPaymentReferenceQuerySelector) {
+      return
+    }
+    const doesCRegexMatch = new RegExp(cRegex, 'i').test(window.location.href)
+    if (!doesCRegexMatch) {
+      return
+    }
+    function getVTotal () {
+      const _ = runQuerySelector(cPaymentTotalQuerySelector)
+      if (_ === undefined) {
+        return undefined
+      }
+      const normalised = _.replace(/[^\d.-]/g, '')
+      const cents = Math.round(parseFloat(normalised) * 100)
+      return Number.isFinite(cents) ? cents : undefined
+    }
+    function getVReference () {
+      return runQuerySelector(cPaymentReferenceQuerySelector)
+    }
+    return {
+      onBootHideSelectors: [],
+      actionButtonStyle: 'bottom:12px;right:8px;',
+      actionButtonText: 'Take payment',
+      canAction: () => {
+        const vTotal = getVTotal()
+        return typeof vTotal === 'number'
+      },
+      onAction: () => {
+        try {
+          const total = getVTotal()
+          const userPaymentId = getVReference()
+          chrome.runtime.sendMessage({
+            platformId: 'HUBSPOT',
+            type: 'pay',
+            newPayment: {
+              total,
+              userPaymentId
+            }
+          })
+        } catch ({ message }) {
+          alert(message)
+        }
+      }
+    }
+  })()
+
+  function onMaybeAction () {
+    console.warn('[StickyConnectionsExtension] [onMaybeAction] x1', { cRegex })
+    let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
+
+    console.warn('[StickyConnectionsExtension] [1]', { whichPlatform, customPlatform })
     if (!whichPlatform) {
       return
     }
+
     console.warn('[StickyConnectionsExtension] [2] whichPlatform', whichPlatform)
     const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 

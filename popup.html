@@ -23,19 +23,13 @@
     }
     body {
       width: 320px;
-      height: 320px;
     }
     body {
       font-family: sans-serif;
       margin: 16px;
     }
     body main {
-      position: absolute;
       width: calc(100% - 32px);
-      top: 50%;
-      left: 50%;
-      max-width: 320px;
-      transform: translateX(-50%) translateY(-50%);
     }
     body main > * + * {
       margin-top: 24px;
@@ -152,12 +146,16 @@
     <details>
       <summary>Advanced settings</summary>
       <div>
-        <label for="cReferenceFunction"><span>Reference DOM function</span></label>
-        <textarea id="cReferenceFunction" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+        <label for="cRegex"><span>URL Regex</span></label>
+        <input id="cRegex" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off">
       </div>
       <div>
-        <label for="cTotalFunction"><span>Total DOM function</span></label>
-        <textarea id="cTotalFunction" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+        <label for="cPaymentTotalQuerySelector"><span>Total query selector</span></label>
+        <textarea id="cPaymentTotalQuerySelector" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
+      </div>
+      <div>
+        <label for="cPaymentReferenceQuerySelector"><span>Reference query selector</span></label>
+        <textarea id="cPaymentReferenceQuerySelector" type="text" required spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"></textarea>
       </div>
     </details>
 
