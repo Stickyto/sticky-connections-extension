@@ -1,7 +1,7 @@
 console.warn('[StickyConnectionsExtension] 1 BACKGROUND RUNNING!')
 
 const BASE_DOMAIN_API = 'https://sticky.to'
-const BASE_DOMAIN_DASHBOARD = 'https://dashboard.sticky.to'
+const BASE_DOMAIN_DASHBOARD = 'https://app.instantdebit.co.uk'
 
 function assert (expression, message) {
   if (!expression) {
@@ -89,7 +89,7 @@ const FUNCTIONS = new Map([
           data.newPayment.phone !== undefined && `setPaymentPhone=${encodeURIComponent(data.newPayment.phone)}`,
         ]
           .filter(_ => _)
-        const url = `${BASE_DOMAIN_DASHBOARD}/ops-manager-2?${urlParts.join('&')}`
+        const url = `https://demo.trustistecommerce.com/demos/retailrefundembed?refundAmount=${(data.newPayment.total / 100).toFixed(2)}&firstName=${data.newPayment.name.split(' ')[0]}&lastName=${data.newPayment.name.split(' ')[1]}`
         sendReponseToPage({ action: 'popUpIframe', url: url })
       } catch ({ message }) {
         sendReponseToPage({ action: 'alert', message })

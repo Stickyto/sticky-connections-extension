@@ -227,7 +227,7 @@ module.exports = {
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
   onBootHideSelectors: ['[data-automationid="StartStripeSetupBanner-banner"]'],
   actionButtonStyle: 'bottom:12px;right:8px;',
-  actionButtonText: 'Take payment',
+  actionButtonText: 'Refund',
   canAction: () => {
     function isOnNewInvoice () {
       return /^https:\/\/go\.xero\.com\/app\/[^/]+\/invoicing\/?$/.test(window.location.href)
