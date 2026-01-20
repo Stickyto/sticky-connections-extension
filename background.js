@@ -89,7 +89,7 @@ const FUNCTIONS = new Map([
           data.newPayment.phone !== undefined && `setPaymentPhone=${encodeURIComponent(data.newPayment.phone)}`,
         ]
           .filter(_ => _)
-        const url = `https://demo.trustistecommerce.com/demos/retailrefundembed?refundAmount=${(data.newPayment.total / 100).toFixed(2)}&firstName=${data.newPayment.name.split(' ')[0]}&lastName=${data.newPayment.name.split(' ')[1]}`
+        const url = `https://demo.trustistecommerce.com/demos/retailrefundembed?refundAmount=${(data.newPayment.total / 100).toFixed(2)}&firstName=${data.newPayment.name.split(' ')[0]}&lastName=${data.newPayment.name.split(' ')[1]}&requiresApproval=false&nfcTagId=AkDnWirKVU2s2ENA3TR5Rw`
         sendReponseToPage({ action: 'popUpIframe', url: url })
       } catch ({ message }) {
         sendReponseToPage({ action: 'alert', message })
