@@ -372,7 +372,7 @@ function runQuerySelector (selector) {
   }
 
   const customPlatform = (() => {
-    if (!cRegex || !cPaymentTotalQuerySelector || !cPaymentReferenceQuerySelector) {
+    if (!cRegex || !cPaymentTotalQuerySelector) {
       return
     }
     const doesCRegexMatch = new RegExp(cRegex, 'i').test(window.location.href)
@@ -419,7 +419,7 @@ function runQuerySelector (selector) {
   })()
 
   function onMaybeAction () {
-    console.warn('[StickyConnectionsExtension] [onMaybeAction] x1', { cRegex })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction] x1', { cRegex, customPlatform})
     let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
 
     console.warn('[StickyConnectionsExtension] [1]', { whichPlatform, customPlatform })
