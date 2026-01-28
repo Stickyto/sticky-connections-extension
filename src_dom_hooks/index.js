@@ -105,15 +105,15 @@ function runQuerySelector (selector) {
   })()
 
   function onMaybeAction () {
-    console.warn('[StickyConnectionsExtension] [onMaybeAction] x1', { cRegex, customPlatform})
+    console.warn('[StickyConnectionsExtension] [onMaybeAction] [1]', { cRegex, customPlatform})
     let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
 
-    console.warn('[StickyConnectionsExtension] [1]', { whichPlatform, customPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction] [2]', { whichPlatform, customPlatform })
     if (!whichPlatform) {
       return
     }
 
-    console.warn('[StickyConnectionsExtension] [2] whichPlatform', whichPlatform)
+    console.warn('[StickyConnectionsExtension] [onMaybeAction] [3]', { whichPlatform })
     const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 
     onBootHideSelectors.forEach(selector => {
@@ -174,11 +174,28 @@ function runQuerySelector (selector) {
     }
   )
 
+  // primary
   observer.observe(
     document.body,
     {
       childList: true,
       subtree: true
     }
+  )
+
+  // secondary
+  setInterval(
+    () => {
+      if (onMaybeActionIsRunning) {
+        return
+      }
+      onMaybeActionIsRunning = true
+      try {
+        onMaybeAction()
+      } finally {
+        onMaybeActionIsRunning = false
+      }
+    },
+    1 * 1000
   )
 })()
