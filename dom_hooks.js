@@ -419,15 +419,13 @@ function runQuerySelector (selector) {
   })()
 
   function onMaybeAction () {
-    console.warn('[StickyConnectionsExtension] [onMaybeAction] [1]', { cRegex, customPlatform})
     let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
-
-    console.warn('[StickyConnectionsExtension] [onMaybeAction] [2]', { whichPlatform, customPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [1]', { whichPlatform, customPlatform })
     if (!whichPlatform) {
       return
     }
 
-    console.warn('[StickyConnectionsExtension] [onMaybeAction] [3]', { whichPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [2]', { whichPlatform })
     const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 
     onBootHideSelectors.forEach(selector => {
