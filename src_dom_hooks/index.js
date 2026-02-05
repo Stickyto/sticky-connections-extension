@@ -15,6 +15,16 @@ window.addEventListener('message', (event) => {
   )
 })
 
+function hideSelectors (onBootHideSelectors) {
+  onBootHideSelectors.forEach(selector => {
+    const selectorElements = document.querySelectorAll(selector)
+    Array.from(selectorElements)
+      .forEach(selectorElement => {
+        selectorElement.style.display = 'none'
+      })
+  })
+}
+
 function runQuerySelector (selector) {
   let el
   try {
@@ -106,21 +116,15 @@ function runQuerySelector (selector) {
 
   function onMaybeAction () {
     let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
-    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [1]', { whichPlatform, customPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-2] [1]', { PLATFORMS, whichPlatform, customPlatform })
     if (!whichPlatform) {
       return
     }
 
-    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [2]', { whichPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-2] [2]', { whichPlatform })
     const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 
-    onBootHideSelectors.forEach(selector => {
-      const selectorElements = document.querySelectorAll(selector)
-      Array.from(selectorElements)
-        .forEach(selectorElement => {
-          selectorElement.style.display = 'none'
-        })
-    })
+    hideSelectors(onBootHideSelectors)
 
     const canAction = _canAction()
 

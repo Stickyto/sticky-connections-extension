@@ -20,18 +20,20 @@ const ACTIONS = new Map([
 
 module.exports = ACTIONS
 
-},{"./popUpIframe":8}],2:[function(require,module,exports){
+},{"./popUpIframe":9}],2:[function(require,module,exports){
 const PLATFORM_HUBSPOT = require('./HUBSPOT')
 const PLATFORM_QUICKBOOKS = require('./QUICKBOOKS')
 const PLATFORM_XERO = require('./XERO')
+const PLATFORM_PEEREDGE = require('./PEEREDGE')
 
 module.exports = [
   PLATFORM_HUBSPOT,
   PLATFORM_QUICKBOOKS,
-  PLATFORM_XERO
+  PLATFORM_XERO,
+  PLATFORM_PEEREDGE
 ]
 
-},{"./HUBSPOT":3,"./QUICKBOOKS":4,"./XERO":5}],3:[function(require,module,exports){
+},{"./HUBSPOT":3,"./PEEREDGE":4,"./QUICKBOOKS":5,"./XERO":6}],3:[function(require,module,exports){
 module.exports = {
   id: 'HUBSPOT',
   initialMatch: '^https:\\/\\/(?:app|app-eu1)\\.hubspot\\.com\\/(?:contacts\\/\\d+\\/objects\\/[\\d-]+\\/views\\/[^/]+\\/list\\/?|quotes\\/\\d+\\/details\\/\\d+)(?:\\?.*)?$',
@@ -141,6 +143,59 @@ module.exports = {
 }
 },{}],4:[function(require,module,exports){
 module.exports = {
+  id: 'PEEREDGE',
+  initialMatch: '^https:\\/\\/carrier-voice\\.peeredge\\.com\\/accounting\\/send-payment\\/stripe$',
+  onBootHideSelectors: ['button[form="stripe-form"]'],
+  actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
+  actionButtonText: 'Send payment',
+  customStyle: `
+    .pop-up-frame--blocker {
+      z-index: 10000 !important;
+    }
+    .pop-up-frame--inside {
+      z-index: 10001 !important;
+    }
+    .pop-up-frame--button {
+      z-index: 10001 !important;
+    }
+  `,
+  canAction: () => {
+    return document.querySelector('input[id="stripe-form_amount"]') ? true : false
+  },
+  onAction: () => {
+    function getTotal() {
+      let valueStrings = [
+        (() => {
+          const valueEl = document.querySelector('input[id="stripe-form_amount"]')
+          return valueEl ? valueEl.value : undefined
+        })()
+      ]
+      const valueEl = valueStrings.find(_ => _)
+      if (!valueEl) throw new Error('Peeredge->onAction: Total value not found')
+
+      const parsed = parseFloat(valueEl.replace(/[^0-9.]/g, ''))
+      if (isNaN(parsed)) throw new Error(`Peeredge->onAction: Invalid number: "${valueEl}"`)
+
+      return Math.round(parsed * 100)
+    }
+
+    try {
+      const total = getTotal()
+      chrome.runtime.sendMessage({
+        platformId: 'PEEREDGE',
+        type: 'pay',
+        newPayment: {
+          total
+        }
+      })
+    } catch ({ message }) {
+      alert(message)
+    }
+  }
+}
+
+},{}],5:[function(require,module,exports){
+module.exports = {
   id: 'QUICKBOOKS',
   initialMatch: '^https:\\/\\/qbo\\.intuit\\.com\\/app\\/invoice(?:$|\\?.*\\btxnId=\\d+\\b.*$)',
   onBootHideSelectors: ['div[data-theme="quickbooks"][role="alert"][class*="paymentSignupPageMessage"]', 'div[id="payment-method-widget"]'],
@@ -221,7 +276,7 @@ module.exports = {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
   id: 'XERO',
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
@@ -294,7 +349,7 @@ module.exports = {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 const styleDuplicateKeys = []
 
 const noop = () => {}
@@ -311,7 +366,7 @@ module.exports = function addStyle (deduplicateKey, string) {
   }
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 if (!window.location.href) return
 
 const PLATFORMS = require('./PLATFORMS/0-index')
@@ -328,6 +383,16 @@ window.addEventListener('message', (event) => {
     }
   )
 })
+
+function hideSelectors (onBootHideSelectors) {
+  onBootHideSelectors.forEach(selector => {
+    const selectorElements = document.querySelectorAll(selector)
+    Array.from(selectorElements)
+      .forEach(selectorElement => {
+        selectorElement.style.display = 'none'
+      })
+  })
+}
 
 function runQuerySelector (selector) {
   let el
@@ -420,21 +485,15 @@ function runQuerySelector (selector) {
 
   function onMaybeAction () {
     let whichPlatform = PLATFORMS.find(platform => new RegExp(platform.initialMatch, 'i').test(window.location.href)) || customPlatform
-    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [1]', { whichPlatform, customPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-2] [1]', { PLATFORMS, whichPlatform, customPlatform })
     if (!whichPlatform) {
       return
     }
 
-    console.warn('[StickyConnectionsExtension] [onMaybeAction-1] [2]', { whichPlatform })
+    console.warn('[StickyConnectionsExtension] [onMaybeAction-2] [2]', { whichPlatform })
     const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 
-    onBootHideSelectors.forEach(selector => {
-      const selectorElements = document.querySelectorAll(selector)
-      Array.from(selectorElements)
-        .forEach(selectorElement => {
-          selectorElement.style.display = 'none'
-        })
-    })
+    hideSelectors(onBootHideSelectors)
 
     const canAction = _canAction()
 
@@ -512,7 +571,7 @@ function runQuerySelector (selector) {
   )
 })()
 
-},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":6}],8:[function(require,module,exports){
+},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":7}],9:[function(require,module,exports){
 const uuid = require('./uuid')
 const addStyle = require('./addStyle')
 
@@ -638,7 +697,7 @@ module.exports = function popUpIframe ({ html, inlineStyle, src, canClose = true
   }
 }
 
-},{"./addStyle":6,"./uuid":9}],9:[function(require,module,exports){
+},{"./addStyle":7,"./uuid":10}],10:[function(require,module,exports){
 module.exports = function uuid (useUnderscores = false) {
   // Get 16 random bytes
   const rnds = crypto.getRandomValues(new Uint8Array(16));
@@ -676,4 +735,4 @@ module.exports = function uuid (useUnderscores = false) {
   );
 }
 
-},{}]},{},[7]);
+},{}]},{},[8]);
