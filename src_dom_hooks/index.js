@@ -100,7 +100,7 @@ function runQuerySelector (selector) {
           const total = getVTotal()
           const userPaymentId = getVReference()
           chrome.runtime.sendMessage({
-            platformId: 'HUBSPOT',
+            platformId: 'CUSTOM_PLATFORM',
             type: 'pay',
             newPayment: {
               total,
