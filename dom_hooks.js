@@ -20,20 +20,97 @@ const ACTIONS = new Map([
 
 module.exports = ACTIONS
 
-},{"./popUpIframe":9}],2:[function(require,module,exports){
+},{"./popUpIframe":10}],2:[function(require,module,exports){
 const PLATFORM_HUBSPOT = require('./HUBSPOT')
 const PLATFORM_QUICKBOOKS = require('./QUICKBOOKS')
 const PLATFORM_XERO = require('./XERO')
 const PLATFORM_PEEREDGE = require('./PEEREDGE')
+const PLATFORM_FREEAGENT = require('./FREEAGENT')
 
 module.exports = [
   PLATFORM_HUBSPOT,
   PLATFORM_QUICKBOOKS,
   PLATFORM_XERO,
-  PLATFORM_PEEREDGE
+  PLATFORM_PEEREDGE,
+  PLATFORM_FREEAGENT
 ]
 
-},{"./HUBSPOT":3,"./PEEREDGE":4,"./QUICKBOOKS":5,"./XERO":6}],3:[function(require,module,exports){
+},{"./FREEAGENT":3,"./HUBSPOT":4,"./PEEREDGE":5,"./QUICKBOOKS":6,"./XERO":7}],3:[function(require,module,exports){
+module.exports = {
+  id: 'FREEAGENT',
+  initialMatch: '^https:\\/\\/[a-z0-9-]+\\.freeagent\\.com(?:\\/.*)?$',
+  onBootHideSelectors: [],
+  actionButtonStyle: 'bottom:12px;left:8px;',
+  actionButtonText: 'Take payment',
+  customStyle: `
+    .pop-up-frame--blocker {
+      z-index: 10000 !important;
+    }
+    .pop-up-frame--inside {
+      z-index: 10001 !important;
+    }
+    .pop-up-frame--button {
+      z-index: 10001 !important;
+    }
+  `,
+  canAction: () => {
+    function isOnViewInvoice () {
+      return /^https:\/\/[a-z0-9-]+\.freeagent\.com\/invoices\/\d+\/?$/i.test(window.location.href)
+    }
+    return isOnViewInvoice()
+  },
+  onAction: () => {
+    function getTotal() {
+      const container = document.querySelector('[data-test-id="invoice-total-value"] .fe-KeyValuePair-value')
+      if (!container) throw new Error('FreeAgent->onAction: Total row not found')
+
+      const raw = container.textContent.trim()
+      const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
+      if (isNaN(parsed)) throw new Error(`FreeAgent->onAction: Invalid number: "${raw}"`)
+
+      return Math.round(parsed * 100)
+    }
+
+    function getUserPaymentId() {
+      const value1 = document.querySelector('[data-automationid="invoice-number-input--input"]')
+      if (value1) {
+        return value1.value
+      }
+      const container = document.querySelector('#invoice-info h2 strong')
+      if (!container) throw new Error('[1] FreeAgent->onAction: Invoice number container not found')
+
+      for (const node of container.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+          return node.textContent.trim()
+        }
+      }
+      throw new Error('FreeAgent->onAction: Invoice number text node not found')
+    }
+
+    function getName () {
+      const el = document.querySelector('#client-details .fn')
+      return el ? el.textContent.trim() : undefined
+    }
+
+    try {
+      const total = getTotal()
+      const userPaymentId = getUserPaymentId()
+      chrome.runtime.sendMessage({
+        platformId: 'FREEAGENT',
+        type: 'pay',
+        newPayment: {
+          total,
+          userPaymentId,
+          name: getName()
+        }
+      })
+    } catch ({ message }) {
+      alert(message)
+    }
+  }
+}
+
+},{}],4:[function(require,module,exports){
 module.exports = {
   id: 'HUBSPOT',
   initialMatch: '^https:\\/\\/(?:app|app-eu1)\\.hubspot\\.com\\/(?:contacts\\/\\d+\\/objects\\/[\\d-]+\\/views\\/[^/]+\\/list\\/?|quotes\\/\\d+\\/details\\/\\d+)(?:\\?.*)?$',
@@ -141,7 +218,7 @@ module.exports = {
     }
   }
 }
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = {
   id: 'PEEREDGE',
   initialMatch: '^https:\\/\\/carrier-voice\\.peeredge\\.com\\/accounting\\/send-payment\\/stripe$',
@@ -194,7 +271,7 @@ module.exports = {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
   id: 'QUICKBOOKS',
   initialMatch: '^https:\\/\\/qbo\\.intuit\\.com\\/app\\/invoice(?:$|\\?.*\\btxnId=\\d+\\b.*$)',
@@ -276,7 +353,7 @@ module.exports = {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = {
   id: 'XERO',
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
@@ -349,7 +426,7 @@ module.exports = {
   }
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 const styleDuplicateKeys = []
 
 const noop = () => {}
@@ -366,7 +443,7 @@ module.exports = function addStyle (deduplicateKey, string) {
   }
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 if (!window.location.href) return
 
 const PLATFORMS = require('./PLATFORMS/0-index')
@@ -469,7 +546,7 @@ function runQuerySelector (selector) {
           const total = getVTotal()
           const userPaymentId = getVReference()
           chrome.runtime.sendMessage({
-            platformId: 'HUBSPOT',
+            platformId: 'CUSTOM_PLATFORM',
             type: 'pay',
             newPayment: {
               total,
@@ -571,7 +648,7 @@ function runQuerySelector (selector) {
   )
 })()
 
-},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":7}],9:[function(require,module,exports){
+},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":8}],10:[function(require,module,exports){
 const uuid = require('./uuid')
 const addStyle = require('./addStyle')
 
@@ -697,7 +774,7 @@ module.exports = function popUpIframe ({ html, inlineStyle, src, canClose = true
   }
 }
 
-},{"./addStyle":7,"./uuid":10}],10:[function(require,module,exports){
+},{"./addStyle":8,"./uuid":11}],11:[function(require,module,exports){
 module.exports = function uuid (useUnderscores = false) {
   // Get 16 random bytes
   const rnds = crypto.getRandomValues(new Uint8Array(16));
@@ -735,4 +812,4 @@ module.exports = function uuid (useUnderscores = false) {
   );
 }
 
-},{}]},{},[8]);
+},{}]},{},[9]);
