@@ -40,7 +40,7 @@ module.exports = {
   id: 'FREEAGENT',
   initialMatch: '^https:\\/\\/[a-z0-9-]+\\.freeagent\\.com(?:\\/.*)?$',
   onBootHideSelectors: [],
-  actionButtonStyle: 'bottom:12px;left:8px;',
+  actionButtonStyle: 'bottom:66px;right:8px;',
   actionButtonText: 'Take payment',
   customStyle: `
     .pop-up-frame--blocker {
