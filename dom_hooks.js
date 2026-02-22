@@ -20,8 +20,9 @@ const ACTIONS = new Map([
 
 module.exports = ACTIONS
 
-},{"./popUpIframe":10}],2:[function(require,module,exports){
+},{"./popUpIframe":11}],2:[function(require,module,exports){
 const PLATFORM_HUBSPOT = require('./HUBSPOT')
+const PLATFORM_GLOBAL_PAYMENTS = require('./GLOBAL_PAYMENTS')
 const PLATFORM_QUICKBOOKS = require('./QUICKBOOKS')
 const PLATFORM_XERO = require('./XERO')
 const PLATFORM_PEEREDGE = require('./PEEREDGE')
@@ -29,13 +30,14 @@ const PLATFORM_FREEAGENT = require('./FREEAGENT')
 
 module.exports = [
   PLATFORM_HUBSPOT,
+  PLATFORM_GLOBAL_PAYMENTS,
   PLATFORM_QUICKBOOKS,
   PLATFORM_XERO,
   PLATFORM_PEEREDGE,
   PLATFORM_FREEAGENT
 ]
 
-},{"./FREEAGENT":3,"./HUBSPOT":4,"./PEEREDGE":5,"./QUICKBOOKS":6,"./XERO":7}],3:[function(require,module,exports){
+},{"./FREEAGENT":3,"./GLOBAL_PAYMENTS":4,"./HUBSPOT":5,"./PEEREDGE":6,"./QUICKBOOKS":7,"./XERO":8}],3:[function(require,module,exports){
 module.exports = {
   id: 'FREEAGENT',
   initialMatch: '^https:\\/\\/[a-z0-9-]+\\.freeagent\\.com(?:\\/.*)?$',
@@ -111,6 +113,50 @@ module.exports = {
 }
 
 },{}],4:[function(require,module,exports){
+module.exports = {
+  id: 'GLOBAL_PAYMENTS',
+  initialMatch: '^https:\\/\\/myaccount\\.globalpayments\\.com(?:\\/.*)?$',
+  onBootHideSelectors: [],
+  actionButtonText: 'Instant Refund',
+  actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
+  canAction: () => {
+    function isOnAnything () {
+      return window.location.host === 'myaccount.globalpayments.com'
+    }
+    return isOnAnything()
+  },
+  onAction: () => {
+    function getTotal () {
+      return 123
+    }
+
+    function getUserPaymentId () {
+      return 'REF456'
+    }
+
+    function getName () {
+      return 'Cormac Bane'
+    }
+
+    try {
+      const total = getTotal()
+      const userPaymentId = getUserPaymentId()
+      chrome.runtime.sendMessage({
+        platformId: 'FREEAGENT',
+        type: 'pay',
+        newPayment: {
+          total,
+          userPaymentId,
+          name: getName()
+        }
+      })
+    } catch ({ message }) {
+      alert(message)
+    }
+  }
+}
+
+},{}],5:[function(require,module,exports){
 module.exports = {
   id: 'HUBSPOT',
   initialMatch: '^https:\\/\\/(?:app|app-eu1)\\.hubspot\\.com\\/(?:contacts\\/\\d+\\/objects\\/[\\d-]+\\/views\\/[^/]+\\/list\\/?|quotes\\/\\d+\\/details\\/\\d+)(?:\\?.*)?$',
@@ -218,7 +264,7 @@ module.exports = {
     }
   }
 }
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
   id: 'PEEREDGE',
   initialMatch: '^https:\\/\\/carrier-voice\\.peeredge\\.com\\/accounting\\/send-payment\\/stripe$',
@@ -271,7 +317,7 @@ module.exports = {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = {
   id: 'QUICKBOOKS',
   initialMatch: '^https:\\/\\/qbo\\.intuit\\.com\\/app\\/invoice(?:$|\\?.*\\btxnId=\\d+\\b.*$)',
@@ -353,7 +399,7 @@ module.exports = {
   }
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = {
   id: 'XERO',
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
@@ -426,7 +472,7 @@ module.exports = {
   }
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 const styleDuplicateKeys = []
 
 const noop = () => {}
@@ -443,7 +489,7 @@ module.exports = function addStyle (deduplicateKey, string) {
   }
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 if (!window.location.href) return
 
 const PLATFORMS = require('./PLATFORMS/0-index')
@@ -648,7 +694,7 @@ function runQuerySelector (selector) {
   )
 })()
 
-},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":8}],10:[function(require,module,exports){
+},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":9}],11:[function(require,module,exports){
 const uuid = require('./uuid')
 const addStyle = require('./addStyle')
 
@@ -774,7 +820,7 @@ module.exports = function popUpIframe ({ html, inlineStyle, src, canClose = true
   }
 }
 
-},{"./addStyle":8,"./uuid":11}],11:[function(require,module,exports){
+},{"./addStyle":9,"./uuid":12}],12:[function(require,module,exports){
 module.exports = function uuid (useUnderscores = false) {
   // Get 16 random bytes
   const rnds = crypto.getRandomValues(new Uint8Array(16));
@@ -812,4 +858,4 @@ module.exports = function uuid (useUnderscores = false) {
   );
 }
 
-},{}]},{},[9]);
+},{}]},{},[10]);
