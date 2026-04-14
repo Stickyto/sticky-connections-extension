@@ -2,9 +2,9 @@ module.exports = function uuid (useUnderscores = false) {
   // Get 16 random bytes
   const rnds = crypto.getRandomValues(new Uint8Array(16));
 
-  // RFC 4122: set version (4) and variant (10xxxxxx)
-  rnds[6] = (rnds[6] & 0x0f) | 0x40; // version 4
-  rnds[8] = (rnds[8] & 0x3f) | 0x80; // variant 10xx
+  // RFC 4122: set version (4) and variant (10a)
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
 
   // Precompute hex strings for 0..255
   const hex = [];
@@ -13,8 +13,6 @@ module.exports = function uuid (useUnderscores = false) {
   }
 
   const sep = useUnderscores ? "_" : "-";
-
-  // Assemble xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
   return (
     hex[rnds[0]] +
     hex[rnds[1]] +
