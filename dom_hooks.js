@@ -20,13 +20,14 @@ const ACTIONS = new Map([
 
 module.exports = ACTIONS
 
-},{"./popUpIframe":11}],2:[function(require,module,exports){
+},{"./popUpIframe":12}],2:[function(require,module,exports){
 const PLATFORM_HUBSPOT = require('./HUBSPOT')
 const PLATFORM_GLOBAL_PAYMENTS = require('./GLOBAL_PAYMENTS')
 const PLATFORM_QUICKBOOKS = require('./QUICKBOOKS')
 const PLATFORM_XERO = require('./XERO')
 const PLATFORM_PEEREDGE = require('./PEEREDGE')
 const PLATFORM_FREEAGENT = require('./FREEAGENT')
+const PLATFORM_COMMUSOFT = require('./COMMUSOFT')
 
 module.exports = [
   PLATFORM_HUBSPOT,
@@ -34,10 +35,114 @@ module.exports = [
   PLATFORM_QUICKBOOKS,
   PLATFORM_XERO,
   PLATFORM_PEEREDGE,
-  PLATFORM_FREEAGENT
+  PLATFORM_FREEAGENT,
+  PLATFORM_COMMUSOFT
 ]
 
-},{"./FREEAGENT":3,"./GLOBAL_PAYMENTS":4,"./HUBSPOT":5,"./PEEREDGE":6,"./QUICKBOOKS":7,"./XERO":8}],3:[function(require,module,exports){
+},{"./COMMUSOFT":3,"./FREEAGENT":4,"./GLOBAL_PAYMENTS":5,"./HUBSPOT":6,"./PEEREDGE":7,"./QUICKBOOKS":8,"./XERO":9}],3:[function(require,module,exports){
+module.exports = {
+  id: 'COMMUSOFT',
+initialMatch: '^https:\\/\\/app\\.commusoft\\.co\\.uk(?:\\/.*)?$',
+  onBootHideSelectors: [],
+  actionButtonStyle: 'bottom:8px;right:8px;',
+  actionButtonText: 'Take payment',
+  canAction: () => {
+    function isOnViewInvoice () {
+      return /^https:\/\/app\.commusoft\.co\.uk\/customers\/customer_list\/\d+\/jobs\/\d+\/invoices\/\d+\/view\/?$/i.test(window.location.href)
+    }
+    return isOnViewInvoice()
+  },
+  onAction: () => {
+    function getTotal() {
+      const totals = Array.from(document.querySelectorAll('.view-totals'))
+
+      const row = totals.find(el => {
+        const strong = el.querySelector('strong')
+        return strong && strong.textContent.trim() === 'Remainder to Pay:'
+      })
+
+      if (!row) throw new Error('COMMUSOFT->onAction: Remainder to Pay row not found')
+
+      const container = row.querySelector('td:last-child > span')
+      if (!container) throw new Error('COMMUSOFT->onAction: Total value not found')
+
+      const raw = container.textContent.trim()
+      const parsed = parseFloat(raw.replace(/[^0-9.]/g, ''))
+
+      if (isNaN(parsed)) {
+        throw new Error(`COMMUSOFT->onAction: Invalid number: "${raw}"`)
+      }
+
+      return Math.round(parsed * 100)
+    }
+
+    function getUserPaymentId() {
+      const labels = Array.from(document.querySelectorAll('.field-label'))
+      const invoiceLabel = labels.find(el => el.textContent.trim() === 'Invoice no')
+      if (!invoiceLabel) throw new Error('[1] COMMUSOFT->onAction: Invoice number label not found')
+
+      const invoiceContainer = invoiceLabel.parentElement.querySelector('[ng-if="job_invoice.draft === false"]')
+      if (!invoiceContainer) throw new Error('[2] COMMUSOFT->onAction: Invoice number container not found')
+
+      const invoiceNumber = invoiceContainer.textContent.trim()
+
+      const itemGroups = Array.from(document.querySelectorAll('.item-group'))
+
+      const descriptionGroup = itemGroups.find(el => {
+        const label = el.querySelector('span[translate]')
+        return label && label.textContent.trim() === 'Job description:'
+      })
+
+      if (!descriptionGroup) {
+        return invoiceNumber
+      }
+
+      const spans = descriptionGroup.querySelectorAll('span.ng-binding')
+      const description = spans[0] ? spans[0].textContent.trim() : ''
+
+      if (!description) {
+        return invoiceNumber
+      }
+
+      return `${invoiceNumber} ${description}`
+    }
+
+    function getName () {
+      const fields = Array.from(document.querySelectorAll('.field'))
+
+      const field = fields.find(el => {
+        const label = el.querySelector('.field-label')
+        return label && label.textContent.trim() === 'Job contact'
+      })
+
+      if (!field) {
+        return undefined
+      }
+
+      const container = field.querySelector('.ng-binding')
+
+      return container ? container.textContent.trim() : undefined
+    }
+
+    try {
+      const total = getTotal()
+      const userPaymentId = getUserPaymentId()
+      chrome.runtime.sendMessage({
+        platformId: 'COMMUSOFT',
+        type: 'pay',
+        newPayment: {
+          total,
+          userPaymentId,
+          name: getName()
+        }
+      })
+    } catch ({ message }) {
+      alert(message)
+    }
+  }
+}
+
+},{}],4:[function(require,module,exports){
 module.exports = {
   id: 'FREEAGENT',
   initialMatch: '^https:\\/\\/[a-z0-9-]+\\.freeagent\\.com(?:\\/.*)?$',
@@ -112,7 +217,7 @@ module.exports = {
   }
 }
 
-},{}],4:[function(require,module,exports){
+},{}],5:[function(require,module,exports){
 module.exports = {
   id: 'GLOBAL_PAYMENTS',
   initialMatch: '^https:\\/\\/myaccount\\.globalpayments\\.com(?:\\/.*)?$',
@@ -156,7 +261,7 @@ module.exports = {
   }
 }
 
-},{}],5:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 module.exports = {
   id: 'HUBSPOT',
   initialMatch: '^https:\\/\\/(?:app|app-eu1)\\.hubspot\\.com\\/(?:contacts\\/\\d+\\/objects\\/[\\d-]+\\/views\\/[^/]+\\/list\\/?|quotes\\/\\d+\\/details\\/\\d+)(?:\\?.*)?$',
@@ -264,7 +369,7 @@ module.exports = {
     }
   }
 }
-},{}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 module.exports = {
   id: 'PEEREDGE',
   initialMatch: '^https:\\/\\/carrier-voice\\.peeredge\\.com\\/accounting\\/send-payment\\/stripe$',
@@ -317,7 +422,7 @@ module.exports = {
   }
 }
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports = {
   id: 'QUICKBOOKS',
   initialMatch: '^https:\\/\\/qbo\\.intuit\\.com\\/app\\/invoice(?:$|\\?.*\\btxnId=\\d+\\b.*$)',
@@ -399,7 +504,7 @@ module.exports = {
   }
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = {
   id: 'XERO',
   initialMatch: '^https:\\/\\/go\\.xero\\.com\\/app\\/[^/]+\\/invoicing\\/.*$',
@@ -472,7 +577,7 @@ module.exports = {
   }
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 const styleDuplicateKeys = []
 
 const noop = () => {}
@@ -489,7 +594,7 @@ module.exports = function addStyle (deduplicateKey, string) {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 if (!window.location.href) return
 
 const PLATFORMS = require('./PLATFORMS/0-index')
@@ -694,7 +799,7 @@ function runQuerySelector (selector) {
   )
 })()
 
-},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":9}],11:[function(require,module,exports){
+},{"./ACTIONS":1,"./PLATFORMS/0-index":2,"./addStyle":10}],12:[function(require,module,exports){
 const uuid = require('./uuid')
 const addStyle = require('./addStyle')
 
@@ -820,7 +925,7 @@ module.exports = function popUpIframe ({ html, inlineStyle, src, canClose = true
   }
 }
 
-},{"./addStyle":9,"./uuid":12}],12:[function(require,module,exports){
+},{"./addStyle":10,"./uuid":13}],13:[function(require,module,exports){
 module.exports = function uuid (useUnderscores = false) {
   // Get 16 random bytes
   const rnds = crypto.getRandomValues(new Uint8Array(16));
@@ -856,4 +961,4 @@ module.exports = function uuid (useUnderscores = false) {
   );
 }
 
-},{}]},{},[10]);
+},{}]},{},[11]);
