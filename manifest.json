@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Sticky Connections",
-  "version": "1.7.0",
-  "description": "Payments that live where you work. Where ecomm, contactless and AI converge.",
+  "version": "1.8.0",
+  "description": "Sticky combines ecomm journeys, contactless payments and AI-powered ERP/CRM connections into the world's most flexible and developer-friendly platform.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://sticky.to/*",
