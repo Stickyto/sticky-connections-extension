@@ -1,7 +1,6 @@
 module.exports = {
   id: 'GLOBAL_PAYMENTS',
   initialMatch: '^https:\\/\\/myaccount\\.globalpayments\\.com(?:\\/.*)?$',
-  onBootHideSelectors: [],
   actionButtonText: 'Instant Refund',
   actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
   canAction: () => {

@@ -1,7 +1,6 @@
 module.exports = {
   id: 'FREEAGENT',
   initialMatch: '^https:\\/\\/[a-z0-9-]+\\.freeagent\\.com(?:\\/.*)?$',
-  onBootHideSelectors: [],
   actionButtonStyle: 'bottom:66px;right:8px;',
   actionButtonText: 'Take payment',
   customStyle: `

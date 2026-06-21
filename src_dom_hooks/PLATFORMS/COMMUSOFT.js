@@ -1,7 +1,6 @@
 module.exports = {
   id: 'COMMUSOFT',
-initialMatch: '^https:\\/\\/app\\.commusoft\\.co\\.uk(?:\\/.*)?$',
-  onBootHideSelectors: [],
+  initialMatch: '^https:\\/\\/app\\.commusoft\\.co\\.uk(?:\\/.*)?$',
   actionButtonStyle: 'bottom:8px;right:8px;',
   actionButtonText: 'Take payment',
   canAction: () => {

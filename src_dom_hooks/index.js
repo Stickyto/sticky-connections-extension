@@ -88,7 +88,6 @@ function runQuerySelector (selector) {
       return runQuerySelector(cPaymentReferenceQuerySelector)
     }
     return {
-      onBootHideSelectors: [],
       actionButtonStyle: 'bottom:12px;right:8px;',
       actionButtonText: 'Take payment',
       canAction: () => {
@@ -122,7 +121,7 @@ function runQuerySelector (selector) {
     }
 
     console.warn('[StickyConnectionsExtension] [onMaybeAction-2] [2]', { whichPlatform })
-    const { onBootHideSelectors, actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
+    const { onBootHideSelectors = [], actionButtonStyle, actionButtonText, canAction: _canAction, customStyle } = whichPlatform
 
     hideSelectors(onBootHideSelectors)
 
