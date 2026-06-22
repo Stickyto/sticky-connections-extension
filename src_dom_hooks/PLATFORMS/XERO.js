@@ -56,7 +56,6 @@ module.exports = {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'XERO',
         type: 'pay',
         newPayment: {
           total,

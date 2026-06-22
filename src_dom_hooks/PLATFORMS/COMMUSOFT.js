@@ -85,7 +85,6 @@ module.exports = {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'COMMUSOFT',
         type: 'pay',
         newPayment: {
           total,

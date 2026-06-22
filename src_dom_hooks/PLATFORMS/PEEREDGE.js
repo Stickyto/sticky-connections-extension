@@ -38,7 +38,6 @@ module.exports = {
     try {
       const total = getTotal()
       chrome.runtime.sendMessage({
-        platformId: 'PEEREDGE',
         type: 'pay',
         newPayment: {
           total

@@ -64,7 +64,6 @@ module.exports = {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'QUICKBOOKS',
         type: 'pay',
         newPayment: {
           total,

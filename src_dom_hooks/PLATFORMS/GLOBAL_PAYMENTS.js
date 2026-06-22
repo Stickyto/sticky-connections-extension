@@ -1,7 +1,7 @@
 module.exports = {
   id: 'GLOBAL_PAYMENTS',
   initialMatch: '^https:\\/\\/myaccount\\.globalpayments\\.com(?:\\/.*)?$',
-  actionButtonText: 'Instant Refund',
+  actionButtonText: 'Refund',
   actionButtonStyle: 'bottom:12px;right:8px;z-index:10000;',
   canAction: () => {
     function isOnAnything () {
@@ -26,7 +26,6 @@ module.exports = {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'FREEAGENT',
         type: 'pay',
         newPayment: {
           total,

@@ -89,7 +89,6 @@ module.exports = {
       const currency = getCurrency()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'HUBSPOT',
         type: 'pay',
         newPayment: {
           total,

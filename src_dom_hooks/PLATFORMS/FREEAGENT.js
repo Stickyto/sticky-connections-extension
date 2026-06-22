@@ -57,7 +57,6 @@ module.exports = {
       const total = getTotal()
       const userPaymentId = getUserPaymentId()
       chrome.runtime.sendMessage({
-        platformId: 'FREEAGENT',
         type: 'pay',
         newPayment: {
           total,
