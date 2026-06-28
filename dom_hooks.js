@@ -849,8 +849,8 @@ module.exports = function popUpIframe ({ html, inlineStyle, src, canClose = true
         color: white;
         border-radius: 50%;
         position: absolute;
-        top: 20px;
-        right: 20px;
+        top: 16px;
+        right: 16px;
         z-index: 101;
         box-shadow: 0 2px 4px 0 rgb(60 66 87 / 40%), 0 2px 4px 0 rgb(0 0 0 / 40%);
       }
