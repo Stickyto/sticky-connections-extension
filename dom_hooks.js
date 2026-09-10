@@ -54,16 +54,16 @@ initialMatch: '^https:\\/\\/app\\.commusoft\\.co\\.uk(?:\\/.*)?$',
   },
   onAction: () => {
     function getTotal() {
-      const totals = Array.from(document.querySelectorAll('.view-totals'))
+      const totals = Array.from(document.querySelectorAll('.view-totals, tr.tr-no-style'))
 
       const row = totals.find(el => {
         const strong = el.querySelector('strong')
-        return strong && strong.textContent.trim() === 'Remainder to Pay:'
+        return strong && (strong.textContent.trim() === 'Remainder to Pay' || strong.textContent.trim() === 'Grand total')
       })
 
-      if (!row) throw new Error('COMMUSOFT->onAction: Remainder to Pay row not found')
+      if (!row) throw new Error('COMMUSOFT->onAction: [Remainder to Pay || Grand total] row not found')
 
-      const container = row.querySelector('td:last-child > span')
+      const container = row.querySelector('td.actions-column > span') || row.querySelector('td:last-child > span')
       if (!container) throw new Error('COMMUSOFT->onAction: Total value not found')
 
       const raw = container.textContent.trim()
